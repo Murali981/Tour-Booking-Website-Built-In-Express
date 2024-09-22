@@ -10,9 +10,10 @@ const app = express(); // It will add a bunch of methods to the app variable by 
 // them.
 
 // 1) MIDDLEWARES
-
-app.use(morgan("dev")); // Here the morgan is a logging middleware and calling this morgan with dev as the argument will return
-// a function similar to the below middleware function
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev")); // Here the morgan is a logging middleware and calling this morgan with dev as the argument will return
+  // a function similar to the below middleware function
+}
 
 app.use(express.json()); // Here the express.json() is the middleware and middleware is basically a function that can modify the
 // incoming request data . It is called middleware because it is standing between the request and the response . This is the step
@@ -25,15 +26,15 @@ app.use(express.static(`${__dirname}/public`)); // Here the express.static() is 
 // because when we open up a URL that can't find in any of our routes then it will look in the public folder that we have defined. And
 // it sets that folder to the root . Now let's pretend that the root is now our public folder
 
-app.use((req, res, next) => {
-  console.log("Hello from the middleware");
-  next();
-}); // This Middleware is applied to each and every request because we didn't specify any route here.
+// app.use((req, res, next) => {
+//   console.log("Hello from the middleware");
+//   next();
+// }); // This Middleware is applied to each and every request because we didn't specify any route here.
 
-app.use((req, res, next) => {
-  req.requestTime = new Date().toISOString();
-  next();
-});
+// app.use((req, res, next) => {
+//   req.requestTime = new Date().toISOString();
+//   next();
+// });
 
 // app.get("/", (req, res) => {
 //   res.status(200).json({ msg: "Hello, World!", app: "Natours" });
