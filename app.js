@@ -2,6 +2,10 @@ const express = require("express");
 
 const morgan = require("morgan");
 
+const AppError = require("./utils/appError");
+
+const globalErrorHandler = require("./controllers/errorController");
+
 const tourRouter = require("./routes/tourRoutes");
 
 const userRouter = require("./routes/userRoutes");
@@ -31,10 +35,10 @@ app.use(express.static(`${__dirname}/public`)); // Here the express.static() is 
 //   next();
 // }); // This Middleware is applied to each and every request because we didn't specify any route here.
 
-// app.use((req, res, next) => {
-//   req.requestTime = new Date().toISOString();
-//   next();
-// });
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
 
 // app.get("/", (req, res) => {
 //   res.status(200).json({ msg: "Hello, World!", app: "Natours" });
@@ -67,6 +71,30 @@ app.use(express.static(`${__dirname}/public`)); // Here the express.static() is 
 
 app.use("/api/v1/tours", tourRouter); // For this route we want to apply the tourRouter middleware
 app.use("/api/v1/users", userRouter); // For this route we want to apply the userRouter middleware
+
+app.all("*", (req, res, next) => {
+  // Here "*" stands for everything and here the "*" which catches all the urls which are coming to the server.
+  // Please make a point that this is a middleware which will be executed when the user inputs a route which is not
+  // existed on this server and also if you see ,  this middleware is placed at the end of this app.js file because if
+  // any of the routes that are matched will be executed which are placed above this middleware but if none of the routes
+  // matches then only this middleware will be executed sending a response "can't find this URL on this server" back to the user.
+  // res.status(404).json({
+  //   status: "fail",
+  //   message: `Can't find ${req.originalUrl} on this server!`, // originalUrl is a property that we have on the request.
+  //   // Here the originalUrl is the URL that is requested by the user
+  // });
+
+  // const err = new Error(`Can't find ${req.originalUrl} on this server!`); // We are using a basic builtIn error constructor inorder to create an error. Here we can pass a string
+  // // and this string will then be the error message property.
+  // err.status = "fail";
+  // err.statusCode = 404;
+
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404)); // Express assumes that whatever we have passed into the next() method will be an error. So again , whenever we pass anything
+  // into the next() function will assume that it is an error and then it will skip all the other middlewares in the middleware stack
+  // and send the error that we have passed into the global error handling middleware.
+}); // This app.all() will run for all the verbs like GET , POST , PATCH , DELETE etc....simply all the HTTP methods
+
+app.use(globalErrorHandler);
 
 // 4.) START THE SERVER
 
