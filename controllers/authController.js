@@ -18,8 +18,46 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
+/* WHAT ARE COOKIES ? */
+/* Cookie is just a small piece of text that the server can send to clients. Then when the client receives a 
+ cookie then it will automatically store it and then automatically send it back along with all the future requests
+  to the same server. So again Browser automatically stores a cookie that it receives and sends it back in all the 
+  future requests to that server where it  came from */
+
+/* HOW TO ACTUALLY CREATE AND SEND A COOKIE ? */
+/* Inorder to send a cookie , Attach it to the response object like this "res.cookie()" */
+
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
+
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ), // Here we are adding the current date to 90 which means 90 days and then converting the 90 days to milliseconds
+    // by multiplying it with 24(1day = 24 hours) * 60(1hour = 60min) * 60(1min = 60sec) * 1000(1sec = 1000milliseconds)
+    // secure: true, // Secure to true means it will send the cookie only in encrypted connection
+    httpOnly: true, // This means the cookie can only be accessed by the server and not by the client. In simple words
+    // this cookie cannot be modified (or) accessed in any way by the browser and this is important inorder to prevent
+    // these cross-site scripting attacks. Whenever we set the httpOnly to true then it will basically receive the cookie,
+    // store it and then send it automatically along with every request . If we try to test this cookie , it will not
+    // work because we are not using "https" but we are using "http" . Because of the cookie set to true the cookie
+    // would not be created and not be sent to the client and we only want to activate this secure:true in production
+    // only . So we basically want to export this entire thing into a separate variable
+  };
+
+  if (process.env.NODE_ENV === "production") {
+    cookieOptions.secure = true; // This line will make sure that the cookie is only sent over an encrypted connection
+  }
+
+  res.cookie("jwt", token, cookieOptions); // The first argument in this res.cookie() is the name of the cookie which is jwt
+  // and the second argument is "the data that we actually  want to send in the cookie" and the data that we actually
+  // want to send is the token variable that we have just generated. And the third argument is the couple of options we
+  // specify , The first option we gonna specify is the "expires" property and basically this expires property will make it
+  // so that the browser (or) the client in general will delete the cookie after it has expired. So we set the expiration-date
+  // similar to the one we set in the JSON Web Token , We are creating a seperate variable for that.
+
+  // Remove the password from the output
+  user.password = undefined;
 
   res.status(statusCode).json({
     status: "success",

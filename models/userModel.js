@@ -45,7 +45,15 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date, // This passwordChangedAt field will always get changed whenever someone changes the password.
   // Most of the people will not create this field in there schema.
   passwordResetToken: String,
-  passwordResetExpires: Date, // This passwordResetExpires will be expired after a certain amount of time
+  passwordResetExpires: Date, // This passwordResetExpires will be expired after a certain amount of time.
+  active: {
+    type: Boolean,
+    default: true, // Any user that has created a new account is an active user and so the boolean is set to true and also
+    // we don't want to show this in the output , which means we basically want to hide this implementation detail from
+    // the user as we don't want anyone to know that this active flag is here. So this is the reason we want the select field to be
+    // false.
+    select: false, // This is the reason we are using select: false here.
+  },
 });
 
 // Mongoose middleware is the perfect usecase to store passwords in encryped form in the mongo database
@@ -99,6 +107,15 @@ userSchema.pre("save", function (next) {
   // not a problem at all because one second here doesn't make any difference at all . So putting this passwordChangedAt
   // one second in the past will then ensure that the user is always created after the password has been changed
 });
+
+userSchema.pre(/^find/, function (next) {
+  this.find({ active: { $ne: false } }); // Here all the documents where the active property which is not set to false
+  // will show up in the result.
+  next();
+}); // This will happen something before a query and the query will be a find query
+// So this is what it makes the query middleware. This is a regular expression "/^find/" which means we are looking for words
+// (or) strings that starts with find . Please remember that this is a query middleware , So here the "this" keyword points
+// to the current query but not the current document
 
 /* What is an Instance Method ? */
 // An Instance Method is a method that is available on all documents of a certain collection. It is defined on the

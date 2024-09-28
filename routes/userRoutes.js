@@ -21,6 +21,13 @@ router.patch(
 // he is a logged in user with the "authController.protect" middleware then the next() will be called to the next middleware
 // which is the "authController.updatePassword" middleware
 
+router.patch("/updateMe", authController.protect, userController.updateMe); // Again this is a protected route as only the authenticated user is allowed to
+// update his/her data of the current user. All of this is really secure because the ID of the user that is gonna be updated
+// comes from the request.user which was set by this protect middleware which inturn got the ID from the Json Web Token and
+// since no one can change the ID of the JSON Web Token without knowing the secret.
+
+router.delete("/deleteMe", authController.protect, userController.deleteMe);
+
 router
   .route("/")
   .get(userController.getAllUsers)

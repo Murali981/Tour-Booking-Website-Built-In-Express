@@ -2,6 +2,16 @@ const express = require("express");
 
 const morgan = require("morgan");
 
+const rateLimit = require("express-rate-limit");
+
+const helmet = require("helmet");
+
+const mongoSanitize = require("express-mongo-sanitize");
+
+const xss = require("xss-clean");
+
+const hpp = require("hpp");
+
 const AppError = require("./utils/appError");
 
 const globalErrorHandler = require("./controllers/errorController");
@@ -13,16 +23,98 @@ const userRouter = require("./routes/userRoutes");
 const app = express(); // It will add a bunch of methods to the app variable by calling the express() such that from app we can call
 // them.
 
-// 1) MIDDLEWARES
+// 1) GLOBAL MIDDLEWARES
+
+/*  HOW TO SET THE SECURITY HTTP HEADERS ? */
+/* To set this security HTTP headers we will use yet another middleware function which is coming from an NPM package
+ and that npm package is called helmet and this is a stabdard in express development like whoever is using the express
+  they will use this helmet package because again express doesn't use all the security best practices out of the box
+  and so we have to basically manually go ahead */
+
+// SETTING THE SECURITY HTTP HEADERS
+app.use(helmet()); // This will then produce the middleware function that should put right here as we are calling the
+// helmet() middleware function which will inturn return a function that's gonna be sitting here until it is called..
+// It is best to use this helmet package early in the middleware stack so that these headers are really sure to be set.
+// Try to put this helmet middleware on top of all the middlewares which is the first middleware to run
+
+// DEVELOPMENT LOGGING
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev")); // Here the morgan is a logging middleware and calling this morgan with dev as the argument will return
   // a function similar to the below middleware function
 }
 
-app.use(express.json()); // Here the express.json() is the middleware and middleware is basically a function that can modify the
+/* WHAT IS RATE LIMITING ? */
+/* Rate limiting is nothing but preventing TOO many requests from the same IP address  to our API and then this will 
+  help us preventing attacks like denial of service, (or) brute force attacks and this rate-limiter will be implemented
+  as a global middleware function . So basically what the rate limiter gonna do is , to count the no of requests coming 
+  from one IP Address and when there are too many requests then block these requests and it makes sense to implement
+   this rate-limiting in a global middleware and we do this implementation in app.js file and we will implement this
+   rate-limiting using the npm package called express-rate-limit */
+
+/* Creating a limiter */
+const limiter = rateLimit({
+  max: 100, // The maximum number of requests that can be made from a single IP address in a given time window is 100.
+  windowMs: 60 * 60 * 1000, // The duration of the time window in milliseconds ,(1hour = 60sec * 1min = 60sec * 1sec = 1000milliseconds)
+  // So this will allow 100 requests from the same IP Address in one hour
+  message: "Too many requests from this IP, please try again in an hour!", // The message that will be sent to
+  // the client in case of a rate limit exceeded.
+}); // The limiter that we have created above is a middleware function and now we can use this "limiter" middleware function
+// in the app.use()
+
+/// LIMIT REQUESTS FROM SAME API
+app.use("/api", limiter); // Now we are applying this "limiter" middleware function to the "/api" route only. And so this
+// will effect all of the routes that basically starts with this URL which is "/api"
+
+/// This is a body-parser , reading the data from the body into req.body
+app.use(express.json({ limit: "10kb" })); // Here the express.json() is the middleware and middleware is basically a function that can modify the
 // incoming request data . It is called middleware because it is standing between the request and the response . This is the step
 // that the request goes through while it is being processed. The body that the request sends is added to the request object.
+//  limit: "10kb"  means if the body is greater than 10 kilobytes then it will not accept.
 
+/* WHAT IS DATA SANITIZATION ?  */
+/* To clean all the data that comes into the application from malicious code. So,the code that is trying to attack our
+application. In this case we are trying to defend two attacks which are NoSQL query injection and the another one
+is cross-site-scripting attacks(XSS)  */
+
+// The above middleware which is app.use(express.json({ limit: "10kb" })) reads the data into the req.body and only after
+// that we can actually clean that data. So this is the perfect place for data sanitization.
+
+// DATA SANITIZATION AGAINST NOSQL QUERY INJECTION
+app.use(mongoSanitize()); // This mongoSanitize() function will return a middleware function that we can use. This middleware
+// will look at the req.body , request query string and also the request.params and then it will basically filter out
+// all of the dollar signs and dots because this is how the MongoDB operators are written. So by removing these operators
+// these will not going to work
+
+// DATA SANITIZATION AGAINST CROSS-SITE-SCRIPTING ATTACKS(XSS)
+app.use(xss()); // This will clean any user input from malicious HTML code , Let us suppose (or) assume an attacker try
+// to insert some malicious HTML code with some javascript code attached to it , If this would then later be injected
+// into our HTML site then it would really create some damage then. So by using this middleware we prevent that
+// basically by converting all these HTML symbols. As we discussed before , mongoose validation itself is actually a very
+// good protection against XSS because it won't really allow any crazy stuff into our database as long as we use it correctly.
+// Whenever you can just add some validation to your mongoose schemas and this should mostly protect you from cross-site
+// scripting atleast on the server-side
+
+/* WHAT IS PARAMETER POLLUTION ? */
+/* Generally in parameter pollution this queryString is "/api/v1/tours?sort=duration&sort=price" where we have given
+ sort two times where we have polluted our parameters , So to remove these duplicate values(In our example the duplicate key
+  is sort) and we want to remove these duplicate values from the inputted query string. So we will remove these duplicate 
+  values from the inputted query string by installing an NPM package called "HPP" which stands for HTTP Parameter Pollution */
+
+// PREVENT PARAMETER POLLUTION
+app.use(
+  hpp({
+    whitelist: [
+      "duration",
+      "ratingsQuantity",
+      "ratingsAverage",
+      "maxGroupSize",
+      "difficulty",
+      "price",
+    ], // whitelist is simply an array of properties for which we actually allow duplicates in the query string
+  }),
+); // This will clear up the query string
+
+/// SERVING THE STATIC FILES
 app.use(express.static(`${__dirname}/public`)); // Here the express.static() is used to serve the static file and we have given it as a public
 // folder form it has to serve the static files which are in the public folder like HTML , CSS and images files.
 // We can access the overview.html file from the google browser by using the path localhost:3000/overview.html. But here you may
@@ -35,6 +127,7 @@ app.use(express.static(`${__dirname}/public`)); // Here the express.static() is 
 //   next();
 // }); // This Middleware is applied to each and every request because we didn't specify any route here.
 
+/// This is like a TESTING middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   console.log(req.headers); // This is how we can get access to the headers in express
