@@ -2,6 +2,8 @@ const express = require("express");
 
 const tourController = require("../controllers/tourController");
 
+const authController = require("../controllers/authController");
+
 // const {getAllTours , getTour , createTour , updateTour , deleteTour} = require("./../controllers/tourController");
 
 const router = express.Router();
@@ -19,13 +21,26 @@ router.route("/monthly-plan/:year").get(tourController.getMonthlyPlan);
 
 router
   .route("/")
-  .get(tourController.getAllTours)
+  .get(authController.protect, tourController.getAllTours) // Inorder to protect these routes here we gonna use a middleware function which is gonna
+  // run before all of these handlers . So this middlware function will return an error if the user is not authenticated (or)
+  // it will call the next middleware function which is the getAllTours handler here
   .post(tourController.createTour);
 
 router
   .route("/:id")
   .get(tourController.getTour)
   .patch(tourController.updateTour)
-  .delete(tourController.deleteTour); // We are using the app.route() method to define multiple routes for the same path.
+  .delete(
+    authController.protect,
+    authController.restrictTo("admin", "lead-guide"), // Both admin and lead-guide can now delete the tours
+    tourController.deleteTour,
+  ); // We are using the app.route() method
+// to define multiple routes for the same path. Before deleting a tour we have to always check if the user is
+// actually logged in (or) not . Let us suppose if the administrator is trying to delete a tour then we still need to check
+// if the administrator is logged in (or) not ? So the first middleware in this stack here is always the "authController.protect"
+// one . But then after this protected middleware we will have another middleware which is "authController.restrictTo" and
+// to this authController.restrictTo("admin") we will pass some user roles which will be authorized to interact with
+// this resource , and we have set the user role to "admin" in this restrict middleware which means only the admin role
+// can delete this tour
 
 module.exports = router;

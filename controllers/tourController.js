@@ -66,7 +66,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
 
 exports.getAllTours = catchAsync(async (req, res, next) => {
   // try {
-  console.log(req.query);
+  // console.log(req.query);
   // BUILD OUR QUERY
   // 1A) FILTERING
   // const queryObj = { ...req.query }; // This three dots(...) will basically takes all the fields out of the object and this
