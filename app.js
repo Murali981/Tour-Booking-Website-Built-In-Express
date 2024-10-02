@@ -20,6 +20,8 @@ const tourRouter = require("./routes/tourRoutes");
 
 const userRouter = require("./routes/userRoutes");
 
+const reviewRouter = require("./routes/reviewRoutes");
+
 const app = express(); // It will add a bunch of methods to the app variable by calling the express() such that from app we can call
 // them.
 
@@ -165,6 +167,7 @@ app.use((req, res, next) => {
 
 app.use("/api/v1/tours", tourRouter); // For this route we want to apply the tourRouter middleware
 app.use("/api/v1/users", userRouter); // For this route we want to apply the userRouter middleware
+app.use("/api/v1/reviews", reviewRouter); // For this route we want to apply the reviewRouter middleware
 
 app.all("*", (req, res, next) => {
   // Here "*" stands for everything and here the "*" which catches all the urls which are coming to the server.

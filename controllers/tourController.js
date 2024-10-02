@@ -1,10 +1,9 @@
 const Tour = require("../models/tourModel");
-
-const APIFeatures = require("../utils/apiFeatures");
+const AppError = require("../utils/appError");
 
 const catchAsync = require("../utils/catchAsync");
 
-const AppError = require("../utils/appError");
+const factory = require("./handlerFactory");
 
 exports.aliasTopTours = (req, res, next) => {
   // We are prefilling parts of the query object before we then reach the getAllTours handler
@@ -14,242 +13,268 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
-exports.getTour = catchAsync(async (req, res, next) => {
-  // try {
-  const tour = await Tour.findById(req.params.id);
-  // Tour.findOne({_id:req.params.id})
+exports.getTour = factory.getOne(Tour, {
+  path: "reviews",
+  // select: ""
+}); // Here the path property is the field that
+//  we want to populate and also we can specify the select field to specify which field we want to actually get but we
+// don't have any select field to get , that's why we don't need any select field here.
 
-  if (!tour) {
-    return next(new AppError("No tour found with that ID", 404)); // Here we want to jump straight into the error handling middleware
-  } // Here we are writing the return because we want to return the function immediately and not move on to the next line which
-  // would be the below res block where it will try to send two responses
+// exports.getTour = catchAsync(async (req, res, next) => {
+//   // try {
+//   // console.log(req.params.id);
+//   const tour = await Tour.findById(req.params.id).populate("reviews"); // Here the name of the field that we
+//   // want to populate is "reviews".
+//   // .populate({
+//   //   path: "guides",
+//   //   select: "-__v -passwordChangedAt", // Here in the select we are mentioning explicitly that while populating the
+//   //   // guides data , don't show the "__v" and "passwordChangedAt" fields in the response output
+//   // }); // Here we want to populate , So basically
+//   // // to fill up the field called guides in our Tours model where the guides field contains only references and so with
+//   // // populate we are gonna fill it up with the actual data and it is also occurs only in the query but not in the
+//   // // database
+//   // // Tour.findOne({_id:req.params.id})
 
-  res.status(200).json({
-    status: "success",
-    data: {
-      tour,
-    },
-  });
-  // } catch (err) {
-  //   res.status(404).json({
-  //     status: "fail",
-  //     message: "Error retrieving tour",
-  //   });
-  // }
-  //   console.log(req.params); // req.params is where all the parameters of all the variables that we define here are stored . The variables
-  //   // in the above URL are called parameters and they are available in req.params which are readily available such that we can use them.
-  //   const id = req.params.id * 1; // when we multiply a string that looks like a number({id : "5"}) then it will automatically convert
-  //   // this string to a number.
-  //   const tour = tours.find((el) => el.id === Number(req.params.id));
-  // const tour = tours.find((el) => el.id === id);
-  //   if (id > tours.length) {
-  //     return res.status(404).json({
-  //       status: "fail",
-  //       message: "Invalid ID",
-  //     });
-  //   }
-  //   if (!tour) {
-  //     // If the tour is undefined(!tour) then simply return the 404 response with invalid ID as a response from the server
-  //     return res.status(404).json({
-  //       status: "fail",
-  //       message: "Invalid ID",
-  //     });
-  //   }
-  // res.status(200).json({
-  //   status: "success",
-  //   // results: tours.length,
-  //   data: {
-  //     tour,
-  //   },
-  // }); // This type of formating the response data coming from the server is "JSEND data specification"
-});
+//   console.log(tour);
 
-exports.getAllTours = catchAsync(async (req, res, next) => {
-  // try {
-  // console.log(req.query);
-  // BUILD OUR QUERY
-  // 1A) FILTERING
-  // const queryObj = { ...req.query }; // This three dots(...) will basically takes all the fields out of the object and this
-  // // curly braces will simply create a new object which contains all the key-value pairs that were in our req.query object
+//   if (!tour) {
+//     return next(new AppError("No tour found with that ID", 404)); // Here we want to jump straight into the error handling middleware
+//   } // Here we are writing the return because we want to return the function immediately and not move on to the next line which
+//   // would be the below res block where it will try to send two responses
 
-  // const excludeFields = ["page", "sort", "limit", "fields"];
-  // excludeFields.forEach((el) => delete queryObj[el]);
-  // // In JavaScript if we set a variable to another object then that new variable will be a reference to the original object.
+//   res.status(200).json({
+//     status: "success",
+//     data: {
+//       tour,
+//     },
+//   });
+//   // } catch (err) {
+//   //   res.status(404).json({
+//   //     status: "fail",
+//   //     message: "Error retrieving tour",
+//   //   });
+//   // }
+//   //   console.log(req.params); // req.params is where all the parameters of all the variables that we define here are stored . The variables
+//   //   // in the above URL are called parameters and they are available in req.params which are readily available such that we can use them.
+//   //   const id = req.params.id * 1; // when we multiply a string that looks like a number({id : "5"}) then it will automatically convert
+//   //   // this string to a number.
+//   //   const tour = tours.find((el) => el.id === Number(req.params.id));
+//   // const tour = tours.find((el) => el.id === id);
+//   //   if (id > tours.length) {
+//   //     return res.status(404).json({
+//   //       status: "fail",
+//   //       message: "Invalid ID",
+//   //     });
+//   //   }
+//   //   if (!tour) {
+//   //     // If the tour is undefined(!tour) then simply return the 404 response with invalid ID as a response from the server
+//   //     return res.status(404).json({
+//   //       status: "fail",
+//   //       message: "Invalid ID",
+//   //     });
+//   //   }
+//   // res.status(200).json({
+//   //   status: "success",
+//   //   // results: tours.length,
+//   //   data: {
+//   //     tour,
+//   //   },
+//   // }); // This type of formating the response data coming from the server is "JSEND data specification"
+// });
 
-  // 1B) Advanced Filtering
-  // let queryStr = JSON.stringify(queryObj); // Here we are converting the object to a string.
-  // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-  // console.log(JSON.parse(queryStr)); // This will convert back the string to object
+exports.getAllTours = factory.getAll(Tour);
 
-  // {difficulty:"easy" , duration:{$gte: 5} , difficulty:"easy}
-  // { duration: { gte: '5' }, difficulty: 'easy' }
-  // gte , lte , gt , lt
+// exports.getAllTours = catchAsync(async (req, res, next) => {
+//   // try {
+//   // console.log(req.query);
+//   // BUILD OUR QUERY
+//   // 1A) FILTERING
+//   // const queryObj = { ...req.query }; // This three dots(...) will basically takes all the fields out of the object and this
+//   // // curly braces will simply create a new object which contains all the key-value pairs that were in our req.query object
 
-  // console.log(req.query, queryObj); // This req.query gives us an object that is nicely formatted with the data from the query string
-  // const tours = await Tour.find({
-  //   duration: 5,
-  //   difficulty: "easy",
-  // }); // If we didn't pass any arguments into the find() function then it will return all the tours
-  // const query = Tour.find()
-  //   .where("duration")
-  //   .equals(5)
-  //   .where("difficulty")
-  //   .equals("easy");
+//   // const excludeFields = ["page", "sort", "limit", "fields"];
+//   // excludeFields.forEach((el) => delete queryObj[el]);
+//   // // In JavaScript if we set a variable to another object then that new variable will be a reference to the original object.
 
-  // let query = Tour.find(JSON.parse(queryStr)); // Here this tour.find() will return a query and we store this query object in this
-  // // query variable then we can keep on chaining more methods to it. More of these methods that are available on all documents
-  // // through the query class.
+//   // 1B) Advanced Filtering
+//   // let queryStr = JSON.stringify(queryObj); // Here we are converting the object to a string.
+//   // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+//   // console.log(JSON.parse(queryStr)); // This will convert back the string to object
 
-  // 2) Sorting
-  // if (req.query.sort) {
-  //   //  req.query.sort gives the price
-  //   const sortBy = req.query.sort.split(",").join(" ");
-  //   //   console.log(sortBy);
-  //   query = query.sort(sortBy);
-  //   // sort("price ratingsAverage") => Here we are passing two fields to the sort() function
-  // } else {
-  //   query = query.sort("-createdAt");
-  // }
+//   // {difficulty:"easy" , duration:{$gte: 5} , difficulty:"easy}
+//   // { duration: { gte: '5' }, difficulty: 'easy' }
+//   // gte , lte , gt , lt
 
-  // 3) Field limiting
-  // if (req.query.fields) {
-  //   const fields = req.query.fields.split(",").join(" ");
-  //   //   query = query.select("name duration price"); // It will select only these three field names and send back the result
-  //   //   // which contains only these fields . The process of selecting only certain field names is called projecting.
-  //   query = query.select(fields);
-  // } else {
-  //   query = query.select("-__v"); // Here the minus(-) is then not including but excluding. So here we are saying that we want
-  //   // the data except with the field "__v". Here we are excluding only this field "__v" by specifying with a minus(-)
-  // }
+//   // console.log(req.query, queryObj); // This req.query gives us an object that is nicely formatted with the data from the query string
+//   // const tours = await Tour.find({
+//   //   duration: 5,
+//   //   difficulty: "easy",
+//   // }); // If we didn't pass any arguments into the find() function then it will return all the tours
+//   // const query = Tour.find()
+//   //   .where("duration")
+//   //   .equals(5)
+//   //   .where("difficulty")
+//   //   .equals("easy");
 
-  // 4) Pagination
-  // const page = req.query.page * 1 || 1; // This is a nice way of defining default values in javascript.
-  // const limit = req.query.limit * 1 || 100;
-  // const skip = (page - 1) * limit; // This number is all the results that come before the page that we are actually
-  // // requesting now . Let us suppose we are requesting the page number 3 then our results gonna start at page number 21
-  // // We want to skip 20 results before that
-  // // page=2&limit=10 Here the user wants the page number 2 and 10 results per page. It means that the results are from
-  // // one to ten on page 1 and 11 to 20 are on page 2
-  // // query = query.skip(10).limit(10); // Here we are saying that we have to skip 10 results inorder to get the result number 11
-  // // // Here if we requested the page number three then 20 results first have to be skipped(query.skip(20)) , So we will need
-  // // // some way of calculating this skip value here based on the page and the limit.
-  // query = query.skip(skip).limit(limit);
+//   // let query = Tour.find(JSON.parse(queryStr)); // Here this tour.find() will return a query and we store this query object in this
+//   // // query variable then we can keep on chaining more methods to it. More of these methods that are available on all documents
+//   // // through the query class.
 
-  // if (req.query.page) {
-  //   const numTours = await Tour.countDocuments(); // This is going to return the number of documents
-  //   if (skip >= numTours) {
-  //     throw new Error("This page doesnot exist");
-  //   }
-  // }
+//   // 2) Sorting
+//   // if (req.query.sort) {
+//   //   //  req.query.sort gives the price
+//   //   const sortBy = req.query.sort.split(",").join(" ");
+//   //   //   console.log(sortBy);
+//   //   query = query.sort(sortBy);
+//   //   // sort("price ratingsAverage") => Here we are passing two fields to the sort() function
+//   // } else {
+//   //   query = query.sort("-createdAt");
+//   // }
 
-  // EXECUTE THE QUERY
-  const features = new APIFeatures(Tour.find(), req.query) // Here the req.query is coming from the express
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate(); // We are creating a new object(or) instance for the APIFeatures class and store it in the
-  // features variable and this features will have access to all the methods that we are going to define in the call definition
-  const tours = await features.query;
+//   // 3) Field limiting
+//   // if (req.query.fields) {
+//   //   const fields = req.query.fields.split(",").join(" ");
+//   //   //   query = query.select("name duration price"); // It will select only these three field names and send back the result
+//   //   //   // which contains only these fields . The process of selecting only certain field names is called projecting.
+//   //   query = query.select(fields);
+//   // } else {
+//   //   query = query.select("-__v"); // Here the minus(-) is then not including but excluding. So here we are saying that we want
+//   //   // the data except with the field "__v". Here we are excluding only this field "__v" by specifying with a minus(-)
+//   // }
 
-  // SEND RESPONSE
-  res.status(200).json({
-    status: "success",
-    results: tours.length,
-    data: {
-      tours: tours, // (or) you can simply leave it as tours . In tours:tours the right side tours will represent the tours variable
-      // that is coming from the fs.readFileSync() function and the left side tours is representing the tours as a resource in the
-      // path "/api/v1/tours"
-    },
-  }); // This type of formating the response data coming from the server is "JSEND data specification"
-  // } catch (err) {
-  // res.status(404).json({
-  //   status: "fail",
-  //   message: err.message,
-  // });
-  // }
-});
+//   // 4) Pagination
+//   // const page = req.query.page * 1 || 1; // This is a nice way of defining default values in javascript.
+//   // const limit = req.query.limit * 1 || 100;
+//   // const skip = (page - 1) * limit; // This number is all the results that come before the page that we are actually
+//   // // requesting now . Let us suppose we are requesting the page number 3 then our results gonna start at page number 21
+//   // // We want to skip 20 results before that
+//   // // page=2&limit=10 Here the user wants the page number 2 and 10 results per page. It means that the results are from
+//   // // one to ten on page 1 and 11 to 20 are on page 2
+//   // // query = query.skip(10).limit(10); // Here we are saying that we have to skip 10 results inorder to get the result number 11
+//   // // // Here if we requested the page number three then 20 results first have to be skipped(query.skip(20)) , So we will need
+//   // // // some way of calculating this skip value here based on the page and the limit.
+//   // query = query.skip(skip).limit(limit);
 
-exports.createTour = catchAsync(async (req, res, next) => {
-  const newTour = await Tour.create(req.body); // Here the create() method also will return a Promise
+//   // if (req.query.page) {
+//   //   const numTours = await Tour.countDocuments(); // This is going to return the number of documents
+//   //   if (skip >= numTours) {
+//   //     throw new Error("This page doesnot exist");
+//   //   }
+//   // }
 
-  res.status(201).json({
-    status: "success",
-    data: {
-      tour: newTour,
-    },
-  });
+//   // EXECUTE THE QUERY
+//   const features = new APIFeatures(Tour.find(), req.query) // Here the req.query is coming from the express
+//     .filter()
+//     .sort()
+//     .limitFields()
+//     .paginate(); // We are creating a new object(or) instance for the APIFeatures class and store it in the
+//   // features variable and this features will have access to all the methods that we are going to define in the call definition
+//   const tours = await features.query;
 
-  // try {
-  //   //   const newTour = new Tour({});
-  //   //   newTour.save();
-  // } catch (err) {
-  //   res.status(400).json({
-  //     status: "fail",
-  //     message: err.message,
-  //   });
-  // }
-});
-// ); // We are inside of a callback function that is gonna run in  the event loop as we can never ever block the
-// event loop . So that's why are writing the writeFile rather than writing writeFileSync() instead
-// };
+//   // SEND RESPONSE
+//   res.status(200).json({
+//     status: "success",
+//     results: tours.length,
+//     data: {
+//       tours: tours, // (or) you can simply leave it as tours . In tours:tours the right side tours will represent the tours variable
+//       // that is coming from the fs.readFileSync() function and the left side tours is representing the tours as a resource in the
+//       // path "/api/v1/tours"
+//     },
+//   }); // This type of formating the response data coming from the server is "JSEND data specification"
+//   // } catch (err) {
+//   // res.status(404).json({
+//   //   status: "fail",
+//   //   message: err.message,
+//   // });
+//   // }
+// });
 
-exports.updateTour = catchAsync(async (req, res, next) => {
-  // try {
-  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true, // When you set the new to true then it will return the modified document rather than the original. defaults to false
-    runValidators: true, // This runValidators to true makes sure that it will run the validators again as in the tourSchema we
-    // have mentioned that price should be a number . So it has to be a number and it runs this validator check again....
-  });
+exports.createTour = factory.createOne(Tour);
 
-  if (!tour) {
-    return next(new AppError("No tour found with that ID", 404)); // Here we want to jump straight into the error handling middleware
-  } // Here we are writing the return because we want to return the function immediately and not move on to the next line which
-  // would be the below res block where it will try to send two responses
+// exports.createTour = catchAsync(async (req, res, next) => {
+//   const newTour = await Tour.create(req.body); // Here the create() method also will return a Promise
 
-  res.status(200).json({
-    status: "success",
-    data: {
-      tour: tour,
-    },
-  });
-  // } catch (err) {
-  //   res.status(404).json({
-  //     status: "fail",
-  //     message: "Error updating the tour",
-  //   });
-  // }
-  //   if (req.params.id > tours.length) {
-  //     // If the tour is undefined(!tour) then simply return the 404 response with invalid ID as a response from the server
-  //     return res.status(404).json({
-  //       status: "fail",
-  //       message: "Invalid ID",
-  //     });
-  //   }
-});
+//   res.status(201).json({
+//     status: "success",
+//     data: {
+//       tour: newTour,
+//     },
+//   });
 
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  // try {
-  const tour = await Tour.findByIdAndDelete(req.params.id);
+//   // try {
+//   //   //   const newTour = new Tour({});
+//   //   //   newTour.save();
+//   // } catch (err) {
+//   //   res.status(400).json({
+//   //     status: "fail",
+//   //     message: err.message,
+//   //   });
+//   // }
+// });
+// // ); // We are inside of a callback function that is gonna run in  the event loop as we can never ever block the
+// // event loop . So that's why are writing the writeFile rather than writing writeFileSync() instead
+// // };
 
-  if (!tour) {
-    return next(new AppError("No tour found with that ID", 404)); // Here we want to jump straight into the error handling middleware
-  } // Here we are writing the return because we want to return the function immediately and not move on to the next line which
-  // would be the below res block where it will try to send two responses
+exports.updateTour = factory.updateOne(Tour);
 
-  res.status(204).json({
-    status: "success",
-    data: null,
-  }); // In case when you are deleting anything then according to RESTful API you should not send any data back to the client.
-  // } catch (err) {
-  //   res.status(404).json({
-  //     status: "fail",
-  //     message: "Error deleting the tour",
-  //   });
-  // }
+// exports.updateTour = catchAsync(async (req, res, next) => {
+//   // try {
+//   const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+//     new: true, // When you set the new to true then it will return the modified document rather than the original. defaults to false
+//     runValidators: true, // This runValidators to true makes sure that it will run the validators again as in the tourSchema we
+//     // have mentioned that price should be a number . So it has to be a number and it runs this validator check again....
+//   });
 
-  // If the status code is 204 then it means that there is no content as we will not send any result back to the client after a
-  // particular tour got deleted
-});
+//   if (!tour) {
+//     return next(new AppError("No tour found with that ID", 404)); // Here we want to jump straight into the error handling middleware
+//   } // Here we are writing the return because we want to return the function immediately and not move on to the next line which
+//   // would be the below res block where it will try to send two responses
+
+//   res.status(200).json({
+//     status: "success",
+//     data: {
+//       tour: tour,
+//     },
+//   });
+//   // } catch (err) {
+//   //   res.status(404).json({
+//   //     status: "fail",
+//   //     message: "Error updating the tour",
+//   //   });
+//   // }
+//   //   if (req.params.id > tours.length) {
+//   //     // If the tour is undefined(!tour) then simply return the 404 response with invalid ID as a response from the server
+//   //     return res.status(404).json({
+//   //       status: "fail",
+//   //       message: "Invalid ID",
+//   //     });
+//   //   }
+// });
+
+exports.deleteTour = factory.deleteOne(Tour);
+// exports.deleteTour = catchAsync(async (req, res, next) => {
+//   // try {
+//   const tour = await Tour.findByIdAndDelete(req.params.id);
+
+//   if (!tour) {
+//     return next(new AppError("No tour found with that ID", 404)); // Here we want to jump straight into the error handling middleware
+//   } // Here we are writing the return because we want to return the function immediately and not move on to the next line which
+//   // would be the below res block where it will try to send two responses
+
+//   res.status(204).json({
+//     status: "success",
+//     data: null,
+//   }); // In case when you are deleting anything then according to RESTful API you should not send any data back to the client.
+//   // } catch (err) {
+//   //   res.status(404).json({
+//   //     status: "fail",
+//   //     message: "Error deleting the tour",
+//   //   });
+//   // }
+
+//   // If the status code is 204 then it means that there is no content as we will not send any result back to the client after a
+//   // particular tour got deleted
+// });
 
 exports.getTourStats = catchAsync(async (req, res, next) => {
   // try {
@@ -259,7 +284,9 @@ exports.getTourStats = catchAsync(async (req, res, next) => {
     },
     {
       $group: {
-        _id: { $toUpper: "$difficulty" }, // Here we are saying that we want everything in one group
+        _id: { $toUpper: "$difficulty" }, // Here we are grouping by the difficulty and like this we calculate the
+        // statistics for easy , medium and difficul tours. In this example , we grouped all the tours together by their
+        // difficulty
         numTours: { $sum: 1 },
         numRatings: { $sum: "$ratingsQuantity" },
         avgRating: { $avg: "$ratingsAverage" },
@@ -355,4 +382,127 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
   //     message: "Error deleting the tour",
   //   });
   // }
+});
+
+exports.getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params; // These all distance,center and unit will come from req.params. We are
+  // using destructuring to get all the features at once
+  const [lat, lng] = latlng.split(","); // This will create an array of two elements.
+
+  const radius = unit === "mi" ? distance / 3963.2 : distance / 6378.1; // Here the radius is basically the distance that we want to have as the radius but converted to a
+  // special unit called radians and inorder to get the radians we need to divide our distance by the radius of the earth.
+  // The radius of the earth is different in miles than in kilometers. and in the above the value "3963.2" is the radius
+  // of the earth in miles and if the radius in km then the value is "6378.1", Here the mongoDB expects the radius of the
+  // sphere to be radians and radians we  get by dividing the distance by the radius of the earth
+
+  if (!lat || !lng) {
+    next(
+      new AppError(
+        "Please provide the latitude and longitude in the format lat,lng",
+        400, // 400 status code for bad request
+      ),
+    );
+  }
+
+  // A Geo-spatial query works similar to a regualr query
+
+  const tours = await Tour.find({
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
+  }); // Here we will send the startLocation field in the geospatial point where each
+  // tour starts and this is exactly what we are searching for , To the startLocation field we are sending an object with
+  // the special operator available in mongo which is "$geoWithin" and this "$geoWithin" operator does exactly what it says
+  // So it basically finds documents within a certain geometry and this geometry what we want to define as the next step.
+  // So we want to find documents but where we want to actually want to find these documents , Well we want to find them inside
+  // of a sphere that starts at this point "latlng" that we defined and which has the radius of "distance" that we have
+  // defined. So again our example which is "Los-angeles" , where you have specified a distance of 250 miles then that means
+  // you want to find all the tour documents within a sphere that has a radius of 250 miles . So all these information we
+  // have to pass in to the "$geoWithin" operator and we do that by defining a center sphere and this "$centerSphere" operator
+  // takes array of [] coordinates and of the radius and please rememeber that to the array we will specify another array
+  // inside for specifying the latitude and longitude and also we have to first mention the longitude and then the latitude
+  // in the array which is according to the mongoDB documentation . and in the radius field mongoDB expects a special unit
+  // of radius which is called radians
+
+  console.log(distance, lat, lng, unit);
+
+  /* Another very important thing we will just to do basic queries, We need to first attribute an index to the field where
+  the geo-spatial data that we are searching for is stored. So in this case we will add a start index to startLocation */
+
+  res.status(200).json({
+    status: "success",
+    results: tours.length,
+    data: {
+      data: tours,
+    },
+  });
+});
+
+exports.getDistances = catchAsync(async (req, res, next) => {
+  const { latlng, unit } = req.params; // These all distance,center and unit will come from req.params. We are
+  // using destructuring to get all the features at once
+  const [lat, lng] = latlng.split(","); // This will create an array of two elements.
+
+  const multiplier = unit === "mi" ? 0.000621371 : 0.001; // If the unit is in miles which is "mi" then we have
+  // to multiply with this "0.000621371" number to convert it into miles and if the unit is not in miles then we have
+  // to multiply with "0.001" to convert the distance into "kilometers" as we know that by default the distance is coming in
+  // meters(m) which is a pretty long number.
+
+  if (!lat || !lng) {
+    next(
+      new AppError(
+        "Please provide the latitude and longitude in the format lat,lng",
+        400, // 400 status code for bad request
+      ),
+    );
+  }
+
+  // Inorder to do calculations , We always use the aggregation pipeline and remember that this aggregation pipeline is called
+  // on the model itself and in our case the Model is "Tour" itself
+
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: "Point",
+          coordinates: [lng * 1, lat * 1],
+        },
+        distanceField: "distance",
+        distanceMultiplier: multiplier, // Here we can specify a number which is then going to be multiplied with all the
+        // distances. Here we will specify "0.001" and this is same exactly when we want to divide it by "1000"
+        // We know that if we didn't specify this "distanceMultiplier" property we are getting the distance in "meters"
+        // But we want the distance to come in kilometers , So this is the reason we want to divide the distance/1000 then
+        // it will be converted to kilometers. And you can see above in the distanceMultiplier field we have specified
+        // the value as "0.001" which is same as dividing the distance by 1000(distance/1000).
+      }, // This is the only geo-spatial aggregation pipeline stage that actually exists and this one should be
+      // always first one in  the pipeline. Keep that in mind $geoNear always needs to be the first stage. Something it is
+      // very important to note about $geoNear is that it requires that atleast one of our fields contains a geo-spatial
+      // index. If there is only one field with geo-spatial index then this "$geoNear" stage will automatically use this
+      // index to perform the calculation. But if you have multiple fields with geo-spatial indexes then you need to use
+      // the keys parameter inorder to define the field that you want to define the field that you want to use for the
+      // calculations. But again in this case, We have only one field and so automatically the startLocation field is going
+      // to be used for the calculations. So what do we have to pass into the $geoNear, First we have to specify the
+      // "near" property and "near" is the point from which to calculate the distances. So all the distances will be
+      // calculated between this point that we have defined here and then all the startLocations and so this near point
+      // is the point that we will pass into the function with this latitude and the longitude. Now we need to specify
+      // this point actually as a geoJSON where we have to specify the "type" as "point" and then specify the coordinates
+      // property in an array with the latitude and the longitude and remember here in this coordinates array the first
+      // point will always be the "longitude" property and the second point is the "latitude" property and then multiply
+      // both of them by 1 to simply convert them into numbers and the second one is the "distanceField" property and this
+      // is the name of the field that will be created and where all the calculated distances will be stored.
+    },
+    {
+      $project: {
+        distance: 1, // Here 1 means we want to keep this in the output
+        name: 1,
+      }, // This project field will only keep the names that we want to see in the output
+    },
+  ]); // Remember into the aggregate() function, We will pass in an array with
+  // all the stages of the aggregation pipeline that we want to define. Now for geo-spatial aggregation there is only one single
+  // stage and that is called geoNear($geoNear)
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      data: distances,
+    },
+  });
 });

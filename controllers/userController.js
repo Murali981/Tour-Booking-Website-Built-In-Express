@@ -3,6 +3,8 @@ const AppError = require("../utils/appError");
 
 const catchAsync = require("../utils/catchAsync");
 
+const factory = require("./handlerFactory");
+
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
   // Here the allowed fields is an array containing the name and email fields ["name", "email"] because we have used
@@ -19,20 +21,27 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
+exports.getMe = (req, res, next) => {
+  req.params.id = req.user.id; // req.params.id is the getOne() function is going to use and then for getting this
+  // getMe end point set the req.params.id = req.user.id
+  next();
+};
 
-  // SEND RESPONSE
-  res.status(200).json({
-    status: "success",
-    results: users.length,
-    data: {
-      users: users, // (or) you can simply leave it as tours . In tours:tours the right side tours will represent the tours variable
-      // that is coming from the fs.readFileSync() function and the left side tours is representing the tours as a resource in the
-      // path "/api/v1/tours"
-    },
-  }); // This type of formating the response data coming from the server is "JSEND data specification"
-});
+exports.getAllUsers = factory.getAll(User);
+// exports.getAllUsers = catchAsync(async (req, res, next) => {
+//   const users = await User.find();
+
+//   // SEND RESPONSE
+//   res.status(200).json({
+//     status: "success",
+//     results: users.length,
+//     data: {
+//       users: users, // (or) you can simply leave it as tours . In tours:tours the right side tours will represent the tours variable
+//       // that is coming from the fs.readFileSync() function and the left side tours is representing the tours as a resource in the
+//       // path "/api/v1/tours"
+//     },
+//   }); // This type of formating the response data coming from the server is "JSEND data specification"
+// });
 
 exports.updateMe = async (req, res, next) => {
   // Step 1) Basically create an error if the user tries to update the password (or)Create error if the user POSTs
@@ -95,30 +104,37 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getUser = (req, res) => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not yet defined.",
-  });
-};
+exports.getUser = factory.getOne(User);
+
+// exports.getUser = (req, res) => {
+//   res.status(500).json({
+//     status: "error",
+//     message: "This route is not yet defined.",
+//   });
+// };
 
 exports.createUser = (req, res) => {
   res.status(500).json({
     status: "error",
-    message: "This route is not yet defined.",
+    message: "This route is not yet defined! Please use /signup instead",
   });
 };
 
-exports.updateUser = (req, res) => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not yet defined.",
-  });
-};
+// Donot Update passwords with this
+exports.updateUser = factory.updateOne(User);
 
-exports.deleteUser = (req, res) => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not yet defined.",
-  });
-};
+// exports.updateUser = (req, res) => {
+//   res.status(500).json({
+//     status: "error",
+//     message: "This route is not yet defined.",
+//   });
+// };
+
+exports.deleteUser = factory.deleteOne(User);
+
+// exports.deleteUser = (req, res) => {
+//   res.status(500).json({
+//     status: "error",
+//     message: "This route is not yet defined.",
+//   });
+// };
