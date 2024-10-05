@@ -122,6 +122,93 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+// Only for rendered pages, no errors!
+exports.isLoggedIn = async (req, res, next) => {
+  // This middleware is only for rendered pages and so the goal here is not to protect any route. So there will never be
+  // an error in this middleware
+  // 1) Getting the token and check if it exists (or) not ?
+  if (req.cookies.jwt) {
+    try {
+      // If there is no cookie then there is no logged in user then the next() middleware will be immediately called which
+      // is present outside this if condition and we will not put the currentUser on res.locals.user but if there is a cookie
+      // then we will go through all the below verification steps and in the end if none of them called then the next()
+      // middleware in the stack which means that there is a logged in user and so therefore we put that user on res.locals.user
+      // and like this we will get access to this user in our pug templates
+      // For our entire rendered website the token will always only be sent using the cookie and never the authorization
+      // header and the authorization header is only for the API
+
+      // 1) Verification of the token
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET,
+      ); // Now as a third argument this function actually
+      // requires a callback  function and this callback function gonna run as soon  as the verification is completed . You can see that this
+      // verify is an asynchronous function. It will verify the token and after the verification of token then it will call
+      // a callback function that we can specify . We have been working with promises all the time. So here in this verify()
+      // function , We are going to promisifying this function and as jwt.verify() function will return a promise. Node.js
+      // has a builtIn promisify() function.
+
+      // promisify(jwt.verify) will return a promise and then we are calling the function with (token, process.env.JWT_SECRET) and
+      // calling this (token, process.env.JWT_SECRET) function will return a promise and so we are awaiting on it by using the
+      // await keyword and storing the result into a decoded variable...And here the decoded variable result will be the
+      // decoded JSON web token.
+
+      console.log(decoded);
+
+      /* Below 3 and 4 steps are necessary to ensure security but generally people stop here after doing the above 1 and 2 steps */
+      // Why the below 3 and 4 steps are necessary to ensure security ? ////////
+      /*  For example , what happens if the user is deleted in the mean time ? where the token will still exist but if the user
+   is no longer existent well we then don't want the user to login (or) even worse What if the user has actually changed
+   his password after the token has been issued ?  Well in this condition also it should not work ? For example imagine
+   somebody has stolen the JSON Web Token from a user but then inorder to protect against in this situation the user changes
+   his password And so ofcourse the old token that was issued before the password change  should no longer be valid. So it
+   should not accepted to access the protected routes. These all the above we are gonna implement in the below steps 
+   3 and 4    */
+
+      // 2) Check if the user actually exists in the database (or) not ?
+
+      const currentUser = await User.findById(decoded.id); // It is not the new user but the old user based on the decoded id.
+      console.log(currentUser);
+      if (!currentUser) {
+        return next();
+      }
+
+      // 3) Check if the user has changed the password after the token was issued.
+      // To implement the above 4th step we will create another instance method , which is a method that is available on all
+      // the documents.
+      console.log(currentUser.changedPasswordAfter(decoded.iat));
+      const getCurrentUser = await currentUser.changedPasswordAfter(
+        decoded.iat,
+      );
+      console.log(getCurrentUser);
+      if (getCurrentUser) {
+        // This will return true if the user has changed the password
+        return next();
+      }
+
+      // There is a logged in user
+      // We can do res.locals.any-variable and as you can see , you can put any variable in there and then our pug templates
+      // will get access to them. So if i say res.locals.user then inside of a template there will be a variable called user.
+      // So again each and every pug template will have access to res.locals and whetever we put here will then be a variable
+      // inside of these templates. So it is little bit like passing data into the template using the render() function.
+      res.locals.user = currentUser;
+      return next(); // When all the above conditions are satisified then only this next() method will be called by giving access
+      // to the protected route which is getAllTours() method in this case.
+    } catch (err) {
+      return next(); // We are saying that there is no logged in user
+    }
+  }
+  next(); // If there is no cookie then the next middleware will be called right away.
+};
+
+exports.logout = (req, res) => {
+  res.cookie("jwt", "loggedout", {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true, // we don't want the token to be accessible from the front-end (javascript)
+  }); // on the response object we are setting the cookie with the same name "jwt"
+  res.status(200).json({ status: "success" });
+};
+
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) Getting the token and check if it exists (or) not ?
   let token;
@@ -130,8 +217,9 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
-
   if (!token) {
     return next(
       new AppError(
@@ -198,8 +286,8 @@ exports.protect = catchAsync(async (req, res, next) => {
   req.user = currentUser; // Here we are assigning  the currentUser to the req.user so that we can then use it in the next
   // middleware function. Because , remember this req object is the one which travels from middleware to middleware . So if
   // we want to pass the data from one middleware to the next middleware then we can simply put some stuff on this req object.
-  // So that this data will be available at a later point
-
+  // So that this data will be available at a later point.
+  res.locals.user = currentUser;
   // Here we are storing the currentUser in the request object which can be accessed in any of the
   // middleware functions and controllers that are called after this protect middleware function.
   // console.log(req.user);

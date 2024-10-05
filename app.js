@@ -1,3 +1,5 @@
+const path = require("path");
+
 const express = require("express");
 
 const morgan = require("morgan");
@@ -12,6 +14,8 @@ const xss = require("xss-clean");
 
 const hpp = require("hpp");
 
+const cookieParser = require("cookie-parser");
+
 const AppError = require("./utils/appError");
 
 const globalErrorHandler = require("./controllers/errorController");
@@ -22,10 +26,36 @@ const userRouter = require("./routes/userRoutes");
 
 const reviewRouter = require("./routes/reviewRoutes");
 
+const viewRouter = require("./routes/viewRoutes");
+
 const app = express(); // It will add a bunch of methods to the app variable by calling the express() such that from app we can call
 // them.
 
+app.set("view engine", "pug"); // Express supports most common engines out of the box and pug is one of them.So there
+// no need to install "pug" (or) no need to require() it anywhere. All of this happens behind the scenes internally in
+// express. So we define our view engine here and now we also have to define where these fields are actually located in our
+// file system. So our PUG templates are actually called views in express and this is because these templates are infact the
+// views in the ModelViewController(MVC) architecture and As we already have the controllers and the models folders and now
+// it's actually the time to create the views folder.
+
+app.set("views", path.join(__dirname, "views")); // Here we have to tell in which folder does the views located in. The first argument we will give is,
+// the name of the folder which is "views" and in the second argument we will give the name of the path where is our views
+// folder is located. The path that we provide in the second argument is always relative to the directory from where we have
+// launched the node.js application and it is usually the root project folder but it might not be. So we shouldn't use dot(".")
+// here but instead we have to use the directory name variable. We can do this by using a nice trick that we can use with the
+// node which is using the "path" module , "path" is a builtIn node module which is a core module which is used to manipulate
+// the path names. (const path = require("path"))
+
 // 1) GLOBAL MIDDLEWARES
+
+/// SERVING THE STATIC FILES
+// app.use(express.static(`${__dirname}/public`));
+app.use(express.static(path.join(__dirname, "public"))); // Here the express.static() is used to serve the static file and we have given it as a public
+// folder form it has to serve the static files which are in the public folder like HTML , CSS and images files.
+// We can access the overview.html file from the google browser by using the path localhost:3000/overview.html. But here you may
+// get a doubt that why we are not giving the public in the this route to access the overview.html file (localhost:3000/public/overview.html)
+// because when we open up a URL that can't find in any of our routes then it will look in the public folder that we have defined. And
+// it sets that folder to the root . Now let's pretend that the root is now our public folder
 
 /*  HOW TO SET THE SECURITY HTTP HEADERS ? */
 /* To set this security HTTP headers we will use yet another middleware function which is coming from an NPM package
@@ -73,6 +103,17 @@ app.use(express.json({ limit: "10kb" })); // Here the express.json() is the midd
 // that the request goes through while it is being processed. The body that the request sends is added to the request object.
 //  limit: "10kb"  means if the body is greater than 10 kilobytes then it will not accept.
 
+app.use(
+  express.urlencoded({
+    extended: true, // This means that it will parse the extended syntax of the query string.
+    limit: "10kb", // This is the maximum size of the data that can be sent to the server.
+  }),
+); // This method name is urlencoded because the way the form sends the data to the server
+// is actually also called URL encoded. So here we need this urlencoded middleware to basically parse data coming from
+// a url encoded form. We will pass some settings into the urlencoded({extended: true,limit:"10kb"})
+
+app.use(cookieParser()); // This middleware parses the data from the cookies
+
 /* WHAT IS DATA SANITIZATION ?  */
 /* To clean all the data that comes into the application from malicious code. So,the code that is trying to attack our
 application. In this case we are trying to defend two attacks which are NoSQL query injection and the another one
@@ -116,14 +157,6 @@ app.use(
   }),
 ); // This will clear up the query string
 
-/// SERVING THE STATIC FILES
-app.use(express.static(`${__dirname}/public`)); // Here the express.static() is used to serve the static file and we have given it as a public
-// folder form it has to serve the static files which are in the public folder like HTML , CSS and images files.
-// We can access the overview.html file from the google browser by using the path localhost:3000/overview.html. But here you may
-// get a doubt that why we are not giving the public in the this route to access the overview.html file (localhost:3000/public/overview.html)
-// because when we open up a URL that can't find in any of our routes then it will look in the public folder that we have defined. And
-// it sets that folder to the root . Now let's pretend that the root is now our public folder
-
 // app.use((req, res, next) => {
 //   console.log("Hello from the middleware");
 //   next();
@@ -132,7 +165,8 @@ app.use(express.static(`${__dirname}/public`)); // Here the express.static() is 
 /// This is like a TESTING middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  console.log(req.headers); // This is how we can get access to the headers in express
+  // console.log(req.headers); // This is how we can get access to the headers in express
+  console.log(req.cookies); // This is how we can get access to the cookies in express
   next();
 });
 
@@ -165,6 +199,8 @@ app.use((req, res, next) => {
 
 // 3.) ROUTES
 
+app.use("/", viewRouter); // This viewRouter is mounted on the root URL("/") and so whenever it sees the route("/") it
+// goes to the viewRouter
 app.use("/api/v1/tours", tourRouter); // For this route we want to apply the tourRouter middleware
 app.use("/api/v1/users", userRouter); // For this route we want to apply the userRouter middleware
 app.use("/api/v1/reviews", reviewRouter); // For this route we want to apply the reviewRouter middleware

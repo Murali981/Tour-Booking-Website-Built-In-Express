@@ -1,0 +1,29 @@
+//- EVERYTHING ABOUT PUG ? -------------------------------
+//- pug is a simple whitespace sensitive syntax  for writing HTML code
+//- In Pug inorder to say that one element is inside of another one , all we do is use a "tab" key in the keyboard.
+//- The h1 The Park Camper is the same as writing <h1>The Park Camper</h1> in HTML but the above PUG syntax makes
+//- easier to write the HTML code.
+doctype html
+html
+    head
+        title Natours #{tour}
+        link(rel='stylesheet' href='css/style.css')
+        link(rel='shortcut icon' type='image/png' href='img/favicon.png')
+    body 
+        h1= tour
+        // Here the tour variable comes from the app.js file where this tour variable is passed in the response of 
+        //the render() function of the "base.pug" file 
+        //h1 The Park Camper -- This is same as writing comments in HTML code
+        h2= user.toUpperCase()
+
+        - const x = 9;// this is writing the unbuffered code using the PUG template and unbuffered code is the code 
+        // which will not be visbile in the browser output and we will write unbuffered code by putting an hiphen(-)
+        h2= 2 * x
+
+        p This is just some text 
+
+
+   
+
+
+

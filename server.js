@@ -36,13 +36,13 @@ mongoose
     useCreateIndex: true,
     useFindAndModify: false,
   })
-  .then((con) => {
+  .then(() => {
     // The above mongoose.connect() function will return a promise , So to resolve the promise , We are using the
     // then() function and this then function will have an access to the con variable where it can access the connections object on it.
     // console.log(con.connections);
     console.log("DB Connection is successfully established");
   })
-  .catch((error) => {
+  .catch(() => {
     console.log("Error");
   });
 

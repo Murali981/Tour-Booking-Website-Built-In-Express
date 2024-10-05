@@ -1,0 +1,74 @@
+extends base
+
+
+
+mixin navItem(link,text,icon,active)
+  li(class=`${active ?  'side-nav--active' : '' }`)
+    a(href=`${link}`)
+        svg
+            use(xlink:href=`img/icons.svg#icon-${icon}`)
+        | #{text}
+
+block content
+ main.main
+  .user-view
+    nav.user-view__menu
+      ul.side-nav
+        +navItem('#','Settings','settings',true)
+        +navItem('#','My bookings','briefcase',false)
+        +navItem('#','My reviews','star',false)
+        +navItem('#','Billing','credit-card',false)
+          
+      - if (user.role === 'admin')    
+        .admin-nav
+            h5.admin-nav__heading Admin
+            ul.side-nav
+              +navItem('#','Manage tours','map',false)
+              +navItem('#','Manage users','users',false)
+              +navItem('#','Manage reviews','star',false)
+              +navItem('#','Manage bookings','briefcase',false)
+            
+    .user-view__content
+      .user-view__form-container
+        h2.heading-secondary.ma-bt-md Your account settings
+        //- WITHOUT API
+        //- form.form.form-user-data(action='/submit-user-data' method='POST')
+
+        //- WITH API
+        form.form.form-user-data
+          .form__group
+            label.form__label(for='name') Name
+            input#name.form__input(type='text', value=`${user.name}`, required,name='name')
+          .form__group.ma-bt-md
+            label.form__label(for='email') Email address
+            input#email.form__input(type='email', value=`${user.email}`, required,name='email')
+          .form__group.form__photo-upload
+            img.form__user-photo(src=`/img/users/${user.photo}`, alt='User photo')
+            a.btn-text(href='') Choose new photo
+          .form__group.right
+            button.btn.btn--small.btn--green Save settings
+            //- When we click on the above button element then the form will automatically get submitted and the data will
+            //- be sent using a POST request to the above url which is "/submit-user-data". There are also different ways
+            //- in which the data is actually sent but the default one is called URL encoded and this is the one we are
+            //- using here. In this default method we are encoding all the data that we are submitting in the URL a bit
+            //- like query string. This is the first step. And the second step is to specify the name properties on the
+            //- fields that we actually want to send. Here we want to send the name and email properties.So there are
+            //- two inputs which are the name and email and these values will be sent with a request based on their name
+            //- attributes and we are going to send name='name' and name='email' in the above two input elements
+
+      .line &nbsp;
+
+      .user-view__form-container
+        h2.heading-secondary.ma-bt-md Password change
+        form.form.form-user-password
+          .form__group
+            label.form__label(for='password-current') Current password
+            input#password-current.form__input(type='password', placeholder='••••••••', required, minlength='8')
+          .form__group
+            label.form__label(for='password') New password
+            input#password.form__input(type='password', placeholder='••••••••', required, minlength='8')
+          .form__group.ma-bt-lg
+            label.form__label(for='password-confirm') Confirm password
+            input#password-confirm.form__input(type='password', placeholder='••••••••', required, minlength='8')
+          .form__group.right
+            button.btn.btn--small.btn--green.btn--save-password Save password
