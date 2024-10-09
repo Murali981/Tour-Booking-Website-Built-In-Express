@@ -81,8 +81,6 @@ exports.signup = catchAsync(async (req, res, next) => {
   // Check if the email already exists
   const existingUser = await User.findOne({ email: req.body.email });
 
-  console.log(existingUser);
-
   if (existingUser) {
     return res.status(400).json({
       status: "fail",
@@ -186,7 +184,7 @@ exports.isLoggedIn = async (req, res, next) => {
       // 2) Check if the user actually exists in the database (or) not ?
 
       const currentUser = await User.findById(decoded.id); // It is not the new user but the old user based on the decoded id.
-      console.log(currentUser);
+
       if (!currentUser) {
         return next();
       }
@@ -198,7 +196,6 @@ exports.isLoggedIn = async (req, res, next) => {
       const getCurrentUser = await currentUser.changedPasswordAfter(
         decoded.iat,
       );
-      console.log(getCurrentUser);
       if (getCurrentUser) {
         // This will return true if the user has changed the password
         return next();
@@ -287,7 +284,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   // 4) Check if the user has changed the password after the token was issued.
   // To implement the above 4th step we will create another instance method , which is a method that is available on all
   // the documents.
-  console.log(currentUser.changedPasswordAfter(decoded.iat));
+
   const getCurrentUser = await currentUser.changedPasswordAfter(decoded.iat);
   console.log(getCurrentUser);
   if (getCurrentUser) {

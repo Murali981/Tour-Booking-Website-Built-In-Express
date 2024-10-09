@@ -16,6 +16,9 @@ const hpp = require("hpp");
 
 const cookieParser = require("cookie-parser");
 
+const compression = require("compression"); // This will expose a very simple middleware function which we have ti plug into our
+// middleware stack
+
 const AppError = require("./utils/appError");
 
 const globalErrorHandler = require("./controllers/errorController");
@@ -164,11 +167,16 @@ app.use(
 //   next();
 // }); // This Middleware is applied to each and every request because we didn't specify any route here.
 
+app.use(compression()); // This will return a middleware function which is then again going to compress all the text that is
+// sent to clients. This is not going to work for images because these images are already compressed. So for example a JPEG file
+// is already compressed and this is only going to work for text. Once our website is deployed then we can actually test whether
+// this compression is working or not (or) whether the compression is active (or) not ?
+
 /// This is like a TESTING middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   // console.log(req.headers); // This is how we can get access to the headers in express
-  console.log(req.cookies); // This is how we can get access to the cookies in express
+  // console.log(req.cookies); // This is how we can get access to the cookies in express
   next();
 });
 
