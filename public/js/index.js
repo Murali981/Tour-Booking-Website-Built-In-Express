@@ -5,8 +5,9 @@ import "@babel/polyfill";
 import { displayMap } from "./mapbox";
 import { login, logout } from "./login";
 import { updateSettings } from "./updateSettings";
+import { bookTour } from "./stripe";
 
-// CREATING SOME DOM ELEMENTS
+// CREATING SOME DOM ELEMENTS and also SELECTING SOME DOM ELEMENTS
 const mapBox = document.getElementById("map");
 const loginForm = document.querySelector(".form--login");
 const logOutBtn = document.querySelector(".nav__el--logout");
@@ -14,6 +15,7 @@ const userDataForm = document.querySelector(".form-user-data"); // We are select
 // the account.pug file which is a template created from the account.html file
 const userPasswordForm = document.querySelector(".form-user-password"); // We are selecting the "form-user-password" class name from
 // the account.pug file which is a template created from the account.html file
+const bookBtn = document.getElementById("book-tour");
 
 // VALUES
 
@@ -44,12 +46,24 @@ if (logOutBtn) {
   logOutBtn.addEventListener("click", logout);
 }
 
+// In the below we are sending the form data to be updated on the server which is the name and email of the user for updation. But
+// in the below we are not actually sending the form data to the server but we are selecting them from the form and then passing them
+//- into updateSettings()
 if (userDataForm) {
   userDataForm.addEventListener("submit", (e) => {
     e.preventDefault(); // We will prevent the form being submitted
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    updateSettings({ name, email }, "data");
+    // All the below steps we are doing because we want to update the photo along with the input data which is name and email
+    const form = new FormData();
+    form.append("name", document.getElementById("name").value);
+    form.append("email", document.getElementById("email").value);
+    form.append("photo", document.getElementById("photo").files[0]); //Here it is not ".value" but ".files" because we are uploading a
+    // file. and these files are actually an array and since there is only one photo we are uploading then we need to select first
+    // element in the array which is files[0].
+    console.log(form);
+    // const name = document.getElementById("name").value;
+    // const email = document.getElementById("email").value;
+    // updateSettings({ name, email }, "data");
+    updateSettings(form, "data");
   });
 }
 
@@ -72,6 +86,19 @@ if (userPasswordForm) {
     document.getElementById("password-current").value = "";
     document.getElementById("password").value = "";
     document.getElementById("password-confirm").value = "";
+  });
+}
+
+if (bookBtn) {
+  // Whenever someone hits the "Book Tour" button the tourId is getting read from "e.target.dataset.tourId" and gets stored in "tourId"
+  bookBtn.addEventListener("click", (e) => {
+    e.target.textContent = "Processing..."; // We are using this to change the text of the button
+    // Now getting the tourId from the button
+    // We are getting the below tourId from the data-attribute which is on the button and then call the bookTour() function with the tourId
+    const tourId = e.target.dataset.tourId; // e.target is the element which was basically clicked which is the one that triggered the
+    // event listener here to be fired (#book-tour(data-tour-id="oyeroiuery")). So we are getting the data-tour-id attribute
+    // from the button and in javascript the tour-id is converted into camel case as "tourId".
+    bookTour(tourId);
   });
 }
 

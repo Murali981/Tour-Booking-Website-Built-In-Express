@@ -1,9 +1,107 @@
+const multer = require("multer");
+const sharp = require("sharp");
 const User = require("../models/userModel");
 const AppError = require("../utils/appError");
 
 const catchAsync = require("../utils/catchAsync");
 
 const factory = require("./handlerFactory");
+
+// // CREATING A MULTER STORAGE
+// const multerStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "public/img/users");
+//   }, // Here the destination is a call-back function and this callback function has
+//   // access to the current request , currently uploaded file and also to a call-back function and this callback function
+//   // is like a next() function in express and we are calling it as "cb" here which stands for callback function and this
+//   // callback function doesn't come from express.
+//   filename: (req, file, cb) => {
+//     // user-47987598-84353457945.jpeg => This type of file name guarantees that no two images will have the same filename
+//     // user-userId-current-timestamp => if we have used only the userId then multiple uploads by the same user would override
+//     // the previous image and also if we used the user only with the timestamp then if two users are uploading the image
+//     // at the same time then they would get exactly the same filename.
+//     // Below we will extract the filename from the uploaded file
+//     const ext = file.mimetype.split("/")[1]; // mimetype: "image/jpeg".
+//     cb(null, `user-${req.user.id}-${Date.now()}.${ext}`); // Here "null" indicates that there is no error
+//   },
+// });
+
+// CREATING A MULTER STORAGE
+const multerStorage = multer.memoryStorage(); // Here the image will be stored as a buffer into the memory.
+
+// CREATING A MULTER FILTER
+const multerFilter = (req, file, cb) => {
+  // The goal of this multerFilter() function is to test if the uploaded file is an image (or) not ? and if it is an image
+  // then we pass "true" into the call-back function(cb()) and if it is not an image then we will pass false into the
+  // call-back function along with an error and Again reiterating it we strictly don't allow files to be uploaded that are not
+  // images and this is exactly this multerFilter is for....
+  if (file.mimetype.startsWith("image")) {
+    cb(null, true); // As if it starts with an image then we will pass "null" as a first argument indicating that there is
+    // no error and "true" as the second argument saying that the uploaded file is an image
+  } else {
+    cb(new AppError("Not an image! Please upload only images", 400), false); // For this first argument here we will now
+    // create an AppError() as we are all doing previously
+  }
+};
+
+/* MULTER is a very popular middleware to handle multi-form data which is a form encoding that is used to upload files
+from a form. Previously we have used a URL encoded form inorder to update the user data and for this we also had to include
+a special middleware and multer is basically a middleware for multi-part form data. We will allow the user to upload a photo
+on the /updateMe route. So instead of just being able to update the email and photo , users will also be able to upload there
+user photos. To implement this multer middleware into our project , First we have to install multer into our project using the
+command "npm install multer" */
+
+// const upload = multer({
+//   dest: "public/img/users", // This is exactly the folder where we want to save all the images that are being uploaded.
+//   // Please make a point here that , Images are not directly uploaded into the database as we just upload them into our
+//   // file system and then in the database , We will put a link basically to the image. So in this case , In each user document
+//   // we will have the name of the uploaded file. We will use the above "upload" to create a middleware function that we can
+//   // put it into the "/updateMe" route
+// });
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter, // This is the function that is going to be executed for each file that is being uploaded.
+});
+
+exports.uploadUserPhoto = upload.single("photo"); // This "upload.single()" is saying that we want to upload only a single image and to this single() method
+// we are going to pass the name of the field that is going to hold the image to upload.
+
+/*  In this we will learn about Image processing and manipulation with node.js and in this particaular case , We will resize and convert 
+our images. So everywhere in our user interface , We assume that the uploaded images are squares so that we can display them in circles and
+this works when there are only squares but offcourse in the real world users rarely going to upload images that are squares and so our job
+ is to actually resize images to make them squares
+ */
+
+// We will add another middleware before the updateme and then that middleware will take care of the actual image processing
+
+exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
+  // At this point we already have the file on our request atleast if there was an upload and if there was no upload then ofcourse we
+  // don't want to do anything.
+  if (!req.file) {
+    return next(); // If there was no file on the request then we don't want to do anything and we will simply call the next middleware.
+  }
+
+  req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
+
+  // Doing Image Resizing using the Sharpe Package using the npm command "npm i sharp" . ///
+  // sharp third party npm library is really nice and easy to use image processing library for node.js and helps in resizing images in a
+  // very simple way.
+  await sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat("jpeg")
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/users/${req.file.filename}`); // To this sharp() function we have to pass in the file that we want to do image processing. Now when doing image processing
+  // right after uploading a file then it is always best to not even save  the file to the disk but instead save it to memory. So to
+  // do this we have to do changes in multer configuration which is just the multer storage. Then the file is available at
+  // req.file.buffer. Calling a sharpe() function like this will create an object on which we can chain multiple methods  inorder to
+  // do image processing. The first method we want to chain to this sharpe() method is resize() where we can specify the width and the
+  // height , So we are specifying the width and height to be 500 as we know that if the image has to be square then it should have
+  // same width and height. Now this , it will crop the image so that it covers this entire 500 times 500 square(500 x 500) and we can
+  // change this default behaviour if we want to.
+
+  next();
+});
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -44,6 +142,9 @@ exports.getAllUsers = factory.getAll(User);
 // });
 
 exports.updateMe = async (req, res, next) => {
+  // console.log(req.file);
+  // console.log(req.body);
+
   // Step 1) Basically create an error if the user tries to update the password (or)Create error if the user POSTs
   // the password data.
   if (req.body.password || req.body.passwordConfirm) {
@@ -67,6 +168,12 @@ exports.updateMe = async (req, res, next) => {
   // then it will be filtered out so that it never find it's way to the database.
 
   const filteredBody = filterObj(req.body, "name", "email"); // here we want our body to keep only the name and email
+  if (req.file) {
+    filteredBody.photo = req.file.filename; // Here we are adding the filename of the uploaded image to the user document.
+    // We will only store the image name to our documents and not the entire path to the image. In this line which is
+    // filteredBody.photo = req.file.filename => We are adding the photo property to the object that is going to be
+    // updated in the below filteredBody and this photo property is equal to the file.filename
+  }
 
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true, // If the new:true then it returns the new object which is basically the updated object instead of the old

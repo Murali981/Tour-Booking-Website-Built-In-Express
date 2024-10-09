@@ -100,6 +100,8 @@ router
   .patch(
     authController.protect,
     authController.restrictTo("admin", "lead-guide"), // Both admin and lead-guide can now update the tours
+    tourController.uploadTourImages,
+    tourController.resizeTourImages, // After uploading the images and resizing them , we will call this resizeTourImages middleware function
     tourController.updateTour,
   )
   .delete(

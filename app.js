@@ -28,6 +28,8 @@ const reviewRouter = require("./routes/reviewRoutes");
 
 const viewRouter = require("./routes/viewRoutes");
 
+const bookingRouter = require("./routes/bookingRoutes");
+
 const app = express(); // It will add a bunch of methods to the app variable by calling the express() such that from app we can call
 // them.
 
@@ -64,7 +66,7 @@ app.use(express.static(path.join(__dirname, "public"))); // Here the express.sta
   and so we have to basically manually go ahead */
 
 // SETTING THE SECURITY HTTP HEADERS
-app.use(helmet()); // This will then produce the middleware function that should put right here as we are calling the
+app.use(helmet({ contentSecurityPolicy: false })); // This will then produce the middleware function that should put right here as we are calling the
 // helmet() middleware function which will inturn return a function that's gonna be sitting here until it is called..
 // It is best to use this helmet package early in the middleware stack so that these headers are really sure to be set.
 // Try to put this helmet middleware on top of all the middlewares which is the first middleware to run
@@ -204,6 +206,7 @@ app.use("/", viewRouter); // This viewRouter is mounted on the root URL("/") and
 app.use("/api/v1/tours", tourRouter); // For this route we want to apply the tourRouter middleware
 app.use("/api/v1/users", userRouter); // For this route we want to apply the userRouter middleware
 app.use("/api/v1/reviews", reviewRouter); // For this route we want to apply the reviewRouter middleware
+app.use("/api/v1/bookings", bookingRouter); // For this route we want to apply the bookingRouter middleware
 
 app.all("*", (req, res, next) => {
   // Here "*" stands for everything and here the "*" which catches all the urls which are coming to the server.

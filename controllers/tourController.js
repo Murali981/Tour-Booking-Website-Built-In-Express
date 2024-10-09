@@ -1,9 +1,136 @@
 const Tour = require("../models/tourModel");
 const AppError = require("../utils/appError");
+const multer = require("multer");
+const sharp = require("sharp");
 
 const catchAsync = require("../utils/catchAsync");
 
 const factory = require("./handlerFactory");
+
+// CREATING A MULTER STORAGE
+const multerStorage = multer.memoryStorage(); // Here the image will be stored as a buffer into the memory.
+
+// CREATING A MULTER FILTER
+const multerFilter = (req, file, cb) => {
+  // The goal of this multerFilter() function is to test if the uploaded file is an image (or) not ? and if it is an image
+  // then we pass "true" into the call-back function(cb()) and if it is not an image then we will pass false into the
+  // call-back function along with an error and Again reiterating it we strictly don't allow files to be uploaded that are not
+  // images and this is exactly this multerFilter is for....
+  if (file.mimetype.startsWith("image")) {
+    cb(null, true); // As if it starts with an image then we will pass "null" as a first argument indicating that there is
+    // no error and "true" as the second argument saying that the uploaded file is an image
+  } else {
+    cb(new AppError("Not an image! Please upload only images", 400), false); // For this first argument here we will now
+    // create an AppError() as we are all doing previously
+  }
+};
+
+/* MULTER is a very popular middleware to handle multi-form data which is a form encoding that is used to upload files
+from a form. Previously we have used a URL encoded form inorder to update the user data and for this we also had to include
+a special middleware and multer is basically a middleware for multi-part form data. We will allow the user to upload a photo
+on the /updateMe route. So instead of just being able to update the email and photo , users will also be able to upload there
+user photos. To implement this multer middleware into our project , First we have to install multer into our project using the
+command "npm install multer" */
+
+// const upload = multer({
+//   dest: "public/img/users", // This is exactly the folder where we want to save all the images that are being uploaded.
+//   // Please make a point here that , Images are not directly uploaded into the database as we just upload them into our
+//   // file system and then in the database , We will put a link basically to the image. So in this case , In each user document
+//   // we will have the name of the uploaded file. We will use the above "upload" to create a middleware function that we can
+//   // put it into the "/updateMe" route
+// });
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter, // This is the function that is going to be executed for each file that is being uploaded.
+});
+
+exports.uploadTourImages = upload.fields([
+  {
+    name: "imageCover", // This is the name of the field in our form where we will be uploading our image.
+    maxCount: 1, // This is the maximum number of images that we will be allowing to be uploaded.
+  },
+  {
+    name: "images", // This is the name of the field in our form where we will be uploading our image.
+    maxCount: 3, // This is the maximum number of images that we will be allowing to be uploaded.
+  },
+]); // Here we are passing multiple tour images. So this is the reason we have used fields() method
+// here. and Each of the elements that we will pass into the fields() method is an object. And also we are using the fields()
+// method because we are uploading a single image which is with the name "imageCover" and also multiple images which is with the
+// name "images"
+
+// upload.single("image"); When there is only one then it is simply upload a single image(req.file)
+// upload.array("images", 5); When there are multiple images with the same name then it is upload.array("images",5) => Here 5 is
+// maxCount (req.files)
+
+/* We are creating the below middleware to process the above multiple tour images */
+
+exports.resizeTourImages = catchAsync(async (req, res, next) => {
+  // req.files =>  If we are uploading multiple files then multiple files will be on req.files.
+
+  if (!req.files.imageCover || !req.files.images) {
+    //
+    return next(); // If no image is uploaded then we will skip this middleware and move on to the next middleware
+  }
+
+  // Step 1: Processing the cover image
+  // Where do we actually get the coverImage ?
+  // We will get the coverImage from req.files.imageCover
+
+  // console.log(req.files.imageCover)
+  //  imageCover: [
+  //   {
+  //     fieldname: 'imageCover',
+  //     originalname: 'new-tour-1.jpg',
+  //     encoding: '7bit',
+  //     mimetype: 'image/jpeg',
+  //     buffer: <Buffer ff d8 ff e0 00 10 4a 46 49 46 00 01 01 00 00 48 00 48 00 00 ff e1 00 8c 45 78 69 66 00 00 4d 4d 00 2a 00 00 00 08 00 05 01 12 00 03 00 00 00 01 00 01 ... 1857218 more bytes>,
+  //     size: 1857268
+  //   }
+  // ],
+  // If you see the above one is a imageCover which is an array of objects . So in the below we are writing "req.files.imageCover[0].buffer"
+  // to get the buffer of the first image which is cover image.
+  const imageCoverFilename = `tour-${req.params.id}-${Date.now()}-cover.jpeg`; // We can get the Id of the tour from req.params,id
+  // and remember this route will always contains the ID of the tour
+  await sharp(req.files.imageCover[0].buffer)
+    .resize(2000, 1333) // Here we are resizing the above selected cover image which is stored in the buffer to "3/2" ratio.
+    // Width is 2000 pixels and height is 1333 pixels
+    .toFormat("jpeg") // We are formatting it as a JPEG file
+    .jpeg({ quality: 90 }) // With quality set to 90
+    .toFile(`public/img/tours/${imageCoverFilename}`); // then we are saving the above resized cover image to this path which is
+  // stored in imageCoverFilename variable above.
+
+  // After the above step is finished then our update Tour handler will picks up the above image cover file name to update in the
+  // current tour document
+  req.body.imageCover = imageCoverFilename; // Now we are updating the imageCover field in the current tour document with the above image cover file name.
+  // if you see the updateOne(tour) handler we are passing the entire req.body to update the tour document so to update this imageCover
+  // on the tour document we are putting the "imageCover" field on the req.body so that this imageCover will also be sended to update
+  // the tour document where when it is calling the below next middleware then this req.body contains the imageCover that has to be
+  // updated for the ID of the tour document that we want to update and also please rememeber that this is called "imageCover" because
+  //  in our tourSchema it is the same name which is there which is "imageCover". When it is doing the update , then it will match this
+  // field in the body with the field in our database
+
+  // Step 2: Processing the other images array
+  req.body.images = []; // We are creating an empty array and in the below foreach loop in each iteration we will then push the
+  // current filename to the above images array
+  await Promise.all(
+    req.files.images.map(async (file, i) => {
+      const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
+
+      await sharp(file.buffer)
+        .resize(2000, 1333) // Here we are resizing the above selected cover image which is stored in the buffer to "3/2" ratio.
+        // Width is 2000 pixels and height is 1333 pixels
+        .toFormat("jpeg") // We are formatting it as a JPEG file
+        .jpeg({ quality: 90 }) // With quality set to 90
+        .toFile(`public/img/tours/${filename}`); // then we are saving the above resized cover image to this path which is
+      // stored in imageCoverFilename variable above.
+
+      req.body.images.push(filename); // Now we are pushing the current filename to the images array.
+    }),
+  );
+
+  next();
+});
 
 exports.aliasTopTours = (req, res, next) => {
   // We are prefilling parts of the query object before we then reach the getAllTours handler

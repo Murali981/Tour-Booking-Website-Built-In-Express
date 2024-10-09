@@ -24,6 +24,9 @@ html
     //- script(src='/js/mapbox.js')
     //- script(src='/js/login.js')
     //-The below bundle.js file will contain all the code that is in other files and all their dependencies
+    script(src='https://js.stripe.com/v3/')
+    //- The above script will expose the stripe object globally. We are putting this "Stripe" script in this base.pug because
+    //- our parcel bundler wants this stripe script in the main scope to get access to all of them
     script(src='/js/bundle.js') 
 
 

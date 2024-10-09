@@ -5,7 +5,7 @@ const User = require("../models/userModel");
 
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
-const sendEmail = require("../utils/email");
+const Email = require("../utils/email");
 
 // const signToken = (id) => {
 //   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -78,7 +78,25 @@ exports.signup = catchAsync(async (req, res, next) => {
   //     role: req.body.role,
   //   }); // This create() function will return a promise , So we are awaiting on it.
 
+  // Check if the email already exists
+  const existingUser = await User.findOne({ email: req.body.email });
+
+  console.log(existingUser);
+
+  if (existingUser) {
+    return res.status(400).json({
+      status: "fail",
+      message: "Email already exists. Please use a different email.",
+    });
+  }
+
+  console.log(req.body);
   const newUser = await User.create(req.body);
+
+  const url = `${req.protocol}://${req.get("host")}/me`;
+  console.log(url); // This is just to see the URL that we are going to use to send the email
+  await new Email(newUser, url).sendWelcome(); // We are making this await because we will only move to the next step when the email
+  // has been sent successfully. And also please remember that in the above sendWelcome() is an async function
 
   createSendToken(newUser, 201, res);
 
@@ -398,18 +416,11 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
   // 3) Send it to the user's email address
 
-  const resetURL = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
-  // Ideally the user will click on the email link
-
-  const message = `Forgot your password? Submit a patch request with your new password and passwordConfirm to: ${resetURL}.\n
-  If you didn't forgot your password, Please ignore this email`;
-
   try {
-    await sendEmail({
-      email: user.email,
-      subject: "Your password reset token (valid for 10min)",
-      message,
-    });
+    const resetURL = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
+    // Ideally the user will click on the email link
+
+    await new Email(user, resetURL).sendPasswordReset();
 
     res.status(200).json({
       status: "success",

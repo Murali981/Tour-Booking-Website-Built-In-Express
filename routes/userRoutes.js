@@ -37,6 +37,8 @@ router.get(
 );
 router.patch(
   "/updateMe",
+  userController.uploadUserPhoto,
+  userController.resizeUserPhoto,
   // authController.protect,
   userController.updateMe,
 ); // Again this is a protected route as only the authenticated user is allowed to

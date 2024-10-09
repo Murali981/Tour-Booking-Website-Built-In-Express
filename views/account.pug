@@ -44,7 +44,29 @@ block content
             input#email.form__input(type='email', value=`${user.email}`, required,name='email')
           .form__group.form__photo-upload
             img.form__user-photo(src=`/img/users/${user.photo}`, alt='User photo')
-            a.btn-text(href='') Choose new photo
+            //- When we click on the below link "Choose new photo" then we want a new window to open from which we can select a new
+            //- image to upload and then when we click on the Save settings button and submit a form then we want to upload an image
+            //- into our backend and update the user. First step in implementing the above feature is adding an input element into
+            //- our HTML which is basically our account.pug template which will then allow the file selector to open when we click
+            //- on the "Choose new photo" link and below one is not a link but it is just a placeholder. So just get rid of it.
+            //- a.btn-text(href='') Choose new photo
+            input.form__upload(type='file', accept='image/*' , id='photo',name='photo')
+            //- When we click on the below label then it will actually activate the input element which has the id that we have specified
+            //- in the "for" which is the for='photo' and id='photo' and this label has the text which is "Choose new photo". So when
+            //- we click on the below label element then it will actually activate the input element which has the id that we have specified
+            //- above which is id of "photo". After uploading the photo then there are two possible ways of sending this uploaded photo
+            //- to the server. First one is , Without the API which is in the above we did which is specifying the action field in the 
+            //- form and also the method that we have taken which is "POST" then the data will be directly sent to the server. Now if we
+            //- want to send a file using this method then we would need to specify another option here which is enctype and it has to be
+            //- "multipart/form-data" which is the default value for form elements. After setting this value then
+            //- the browser will send the file along with the form data as a single entity. This is the second step.
+            //- enctype="multipart/form-data" , "multipart" is always for sending the files to the server and again we need the multer
+            //- middleware to handle this "multipart" form data and the name multer itself comes from the multi-part and again if we wanted 
+            //- to send the data without an API then we have to always specify the "enctype" otherwise the form would always ignore
+            //- the file and not send it. But as we already know that we are actually using that with an API, So we donot need to specify
+            //- this "enctype" but we will do it programatically.So let's now send our data including ofcourse the photo by doing an API
+            //- call
+            label(for='photo') Choose new photo
           .form__group.right
             button.btn.btn--small.btn--green Save settings
             //- When we click on the above button element then the form will automatically get submitted and the data will
