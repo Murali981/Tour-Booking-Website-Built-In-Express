@@ -10,9 +10,7 @@ export const bookTour = async (tourId) => {
   try {
     // Step 1: Get the session from the server
     // Here we will use this route "/api/v1/bookings/checkout-session/:tourId" to get the session from the server to the client side.
-    const session = await axios(
-      `http://localhost:3000/api/v1/bookings/checkout-session/${tourId}`,
-    ); // Here we are doing a GET request so there is no need
+    const session = await axios(`/api/v1/bookings/checkout-session/${tourId}`); // Here we are doing a GET request so there is no need
     // to explicitly specify the method as "GET" here and from here we are getting the session details of user by making an API call
     // to Stripe
     console.log(session);
