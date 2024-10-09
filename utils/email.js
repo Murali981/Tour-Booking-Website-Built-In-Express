@@ -51,7 +51,7 @@ module.exports = class Email {
     return nodemailer.createTransport({
       service: "SendGrid", // Use SendGrid for sending emails
       auth: {
-        user: process.env.SENDGRID_USERNAME, // For SendGrid, the username should be "apikey"
+        user: process.env.SENDGRID_USERNAME, // For SendGrid, the username should be SENDGRID_USERNAME
         pass: process.env.SENDGRID_PASSWORD, // This is the SendGrid API key
       },
     });
