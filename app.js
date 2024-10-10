@@ -19,6 +19,8 @@ const cookieParser = require("cookie-parser");
 const compression = require("compression"); // This will expose a very simple middleware function which we have ti plug into our
 // middleware stack
 
+const cors = require("cors"); // This "cors" is a very simple middleware function that we need it in our application
+
 const AppError = require("./utils/appError");
 
 const globalErrorHandler = require("./controllers/errorController");
@@ -56,6 +58,34 @@ app.set("views", path.join(__dirname, "views")); // Here we have to tell in whic
 // the path names. (const path = require("path"))
 
 // 1) GLOBAL MIDDLEWARES
+
+// IMPLEMENTING CORS
+app.use(cors()); // Calling this cors() function will return a middleware function which will add a couple of different headers to our
+// response. Here this middleware function will basically add some headers. This is how we will enable the cross-origin resource sharing
+// for all the incoming requests. We can even configure the cors to enable only specific routes by passing the cors() into a middleware
+// stack as below. This cors() function will set the "Access-Control-Allow-Origin" header to "*" which means everything no matter from
+// where all these incoming requests are coming from.
+// let us suppose we have our API at api.natours.com and then our FrontEnd app is running at "natours.com" and in this case all we want to
+// do is , we want to allow access from this origin here and in this case we would use "app.use(cors({ origin: "https://www.natours.com" }))"
+// Here we are allowing only this "URL" (or) "origin" which is "https://www.natours.com" to create requests to our API which is
+// "api.natours.com" And still it is not over because this "app.use(cors())" will work (or) allow for only simple requests which are
+// GET and POST requests and on the other hand we have so called "non-simple requests" which are "PUT" , "PATCH" , "DELETE" requests
+// (or) also the requests that send cookies (or) using the "non-standard" headers and these non-simple requests require a so called
+// pre-flight phase. So whenever there is a non-simple request then the browser will automatically issue the pre-flight phase. This is
+// how it works => Before the real request actually happens and let's say a DELETE request then the browser first does an options request
+// inorder to figure out if the actual request is safe to send and this means for us all the developers is that on our server we need to
+// actually respond to this options request and Options is just another HTTP method just like GET , POST (or) DELETE. So basically
+// when we get these options requests to our Server then we need to send back the same "Access-Control-Allow-Origin" header and this
+// way the browser will know that the actual request and incase the actual request is the "DELETE" request is safe to perform and then
+// it executes the "DELETE" request itself and this is implemented in the below line of code...
+app.options("*", cors()); // This is another HTTP method that we can respond to , Because the browser will send a options request when there is
+// a pre-flight phase. So we have to define the route which will handle the options. "*" means for all options requests to our server
+
+// app.options("/api/v1/tours/:id" , cors()); => Here we are only allowing a specific optional requests to our server which is a
+// PATCH , DELETE (or) PUT which will happen for a specific tour.
+
+// app.use("/api/v1/tours" , cors() , tourRouter); => If you see in this route we are passing the cors() as a middleware function and it
+// is enabled for this specific route only
 
 /// SERVING THE STATIC FILES
 // app.use(express.static(`${__dirname}/public`));
