@@ -36,6 +36,10 @@ const bookingRouter = require("./routes/bookingRoutes");
 const app = express(); // It will add a bunch of methods to the app variable by calling the express() such that from app we can call
 // them.
 
+app.enable("trust proxy"); // This is something built into express and this line is written for the heroku to tell it that
+//  as this setting it correctly set then only this "req.headers["x-forwarded-proto"] === "https" " will correctly read the https value"
+// from the request header.
+
 app.set("view engine", "pug"); // Express supports most common engines out of the box and pug is one of them.So there
 // no need to install "pug" (or) no need to require() it anywhere. All of this happens behind the scenes internally in
 // express. So we define our view engine here and now we also have to define where these fields are actually located in our

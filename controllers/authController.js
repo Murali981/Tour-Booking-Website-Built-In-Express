@@ -27,7 +27,7 @@ const signToken = (id) =>
 /* HOW TO ACTUALLY CREATE AND SEND A COOKIE ? */
 /* Inorder to send a cookie , Attach it to the response object like this "res.cookie()" */
 
-const createSendToken = (user, statusCode, res) => {
+const createSendToken = (user, statusCode, req, res) => {
   const token = signToken(user._id);
 
   const cookieOptions = {
@@ -43,11 +43,19 @@ const createSendToken = (user, statusCode, res) => {
     // work because we are not using "https" but we are using "http" . Because of the cookie set to true the cookie
     // would not be created and not be sent to the client and we only want to activate this secure:true in production
     // only . So we basically want to export this entire thing into a separate variable
+    secure: req.secure || req.headers["x-forwarded-proto"] === "https", // This line is same as writing the below if statement
   };
 
-  if (process.env.NODE_ENV === "production") {
-    cookieOptions.secure = true; // This line will make sure that the cookie is only sent over an encrypted connection
-  }
+  // // if (process.env.NODE_ENV === "production") {
+  // if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+  //   // The problem with the above if statement is , When we are in production then it doesnot mean that the connection is actually
+  //   // secure because not all the deployed applications are automatically set to "https". So we need to change the above if statement.
+  //   // In express , We have a secure property on request and only when the connection is secure then this req.secure will be true but
+  //   // the problem in heroku is , this req.secure === true will not work because heroku proxies will redirect (or) modifies all the
+  //   // incoming requests into our application before they actually reach our app. So inorder to make this work on heroku , We need to
+  //   // test if the x forward proto header is set to https and this is what heroku does internally
+  //   cookieOptions.secure = true; // This line will make sure that the cookie is only sent over an encrypted connection
+  // }
 
   res.cookie("jwt", token, cookieOptions); // The first argument in this res.cookie() is the name of the cookie which is jwt
   // and the second argument is "the data that we actually  want to send in the cookie" and the data that we actually
@@ -96,7 +104,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   await new Email(newUser, url).sendWelcome(); // We are making this await because we will only move to the next step when the email
   // has been sent successfully. And also please remember that in the above sendWelcome() is an async function
 
-  createSendToken(newUser, 201, res);
+  createSendToken(newUser, 201, req, res);
 
   // Before we try the above function , Please remember that this is an async function and so we need to think about
   // an error handler here. Here we have to wrap the entire above function that we have just created into the
@@ -135,7 +143,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 3) If everything is ok , then send the jsonwebtoken back to the client
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 });
 
 // Only for rendered pages, no errors!
@@ -479,7 +487,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   // Step 3) Update the changedPasswordAt property for the user
   // Step 4) Log the user in, Send the JWT back to the client
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
   // Here we are creating the new token and sometimes it happens that this token
   // is created a bit before the changed password timestamp has actually been created
 });
@@ -520,5 +528,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   // changedPasswordAt property these both pre() middlewares will not work if we use findByIdAndUpdate()
 
   // 4) Log the user in, send the JWT back to the user
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 });

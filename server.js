@@ -94,7 +94,9 @@ mongoose
 
 // console.log(process.env);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // This PORT is defined in the config.env file. We have to write "process.env.PORT" to access
+// the PORT variable because HEROKU sets the PORT variable. If we didn't write process.env.PORT then HEROKU will not work and it will
+// give you an error
 
 const server = app.listen(PORT, () => {
   console.log(`App is listening on port ${PORT}`);
@@ -125,3 +127,16 @@ process.on("unhandledRejection", (err) => {
   So for example , in the problem connecting to the database where we should add a catch handler and not just simply rely
    on the unhandled rejection call-back that we have above and some people even say we shouldn't even use them at
    all  */
+
+/* HANDLING THE SIGTERM SIGNALS SENDED BY THE HEROKU DYNOS WHICH CAN CAUSE OUR REQUESTS TO ABRUPT INBETWEEN  */
+
+process.on("SIGTERM", () => {
+  // SIGTERM  is a signal that is used to cause a program to really stop running. This is a polite way to ask a program to terminate
+  console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
+  server.close(() => {
+    console.log("💥 Process terminated!");
+  });
+}); // SIGTERM is just an event which is emitted and that our node.js application receives and can then
+// respond to exactly like a  "UNHANDLED REJECTION". We have to keep listening to this "SIGTERM" event because heroku every 24 hours
+// will shut down our application by sending this "SIGTERM" signal (or) this "SIGTERM" event to our node.js application. Then we will
+// shut down our process gracefully by using server.close() which allows all the pending requests to still process until the end
