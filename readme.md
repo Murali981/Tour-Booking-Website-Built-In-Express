@@ -32,7 +32,7 @@ This application allows users to browse, book, and pay for exciting travel exper
 - Database: MongoDB with Mongoose ODM
 - Authentication: JSON Web Tokens (JWT)
 - Payment Processing: Stripe
-- Frontend Templating: Pug (if applicable)
+- Frontend Templating: Pug 
 - Mapping: Mapbox integration
 
 ## System Design
@@ -56,21 +56,21 @@ This application allows users to browse, book, and pay for exciting travel exper
    - Fields: review, rating, tour and user
 
 ## Installation
-git clone https://github.com/Murali981/tours-booking-app.git
-cd tours-booking-app
-npm install
+- git clone https://github.com/Murali981/tours-booking-app.git
+- cd tours-booking-app
+-npm install
 
 ## Running the application
- npm run
+ - npm run
 
  ## Environment Variables
-Create a .env file in the root directory and add:
-NODE_ENV=development
-PORT=Any valid port number
-DATABASE=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRES_IN=90d
-STRIPE_SECRET_KEY=your_stripe_secret_key
+- Create a .env file in the root directory and add:
+- NODE_ENV=development
+- PORT=Any valid port number
+- DATABASE=your_mongodb_connection_string
+- JWT_SECRET=your_jwt_secret
+- JWT_EXPIRES_IN=90d
+- STRIPE_SECRET_KEY=your_stripe_secret_key
 
 ## Deployment
-This application is deployed on Heroku. 
+- This application is deployed on Heroku. 
