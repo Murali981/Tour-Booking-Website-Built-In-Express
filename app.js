@@ -35,6 +35,8 @@ const viewRouter = require("./routes/viewRoutes");
 
 const bookingRouter = require("./routes/bookingRoutes");
 
+const bookingController = require("./controllers/bookingController");
+
 const app = express(); // It will add a bunch of methods to the app variable by calling the express() such that from app we can call
 // them.
 
@@ -135,6 +137,23 @@ const limiter = rateLimit({
 /// LIMIT REQUESTS FROM SAME API
 app.use("/api", limiter); // Now we are applying this "limiter" middleware function to the "/api" route only. And so this
 // will effect all of the routes that basically starts with this URL which is "/api"
+
+app.post(
+  "/webhook-checkout",
+  express.raw({ type: "application/json" }),
+  bookingController.webhookCheckout,
+); // Why we have defined this "/webhook-checkout" route in this
+// app.js file instead of doing it in the booking router because in this handler function which is "bookingController.webhookCheckout"
+// when we have received the body from Stripe then the Stripe function will use this function to actually read the body which needs this
+// body in a raw form. So basically as a string but not as a JSON and Again i am reiterating this explanation which is , From this route
+// "/webhook-checkout" we need the body coming with the request to be not in "JSON" otherwise this is not going to work at all. Now the
+// thing is , As soon as our request has hit this middleware which is "app.use(express.json({ limit: "10kb" }))" then the incoming request's
+// body will be parsed and converted to JSON and then it will put on the req.body as a simple JSON object and again with this our route
+// handler which is "bookingController.webhookCheckout" will be not able to work but the whole reason why we have to put this route
+// here which is above the "app.use(express.json({ limit: "10kb" }))" is because we are calling the body-parser after this route which is
+// another middleware function which is below this route but we have to still parse the body but in a raw format. To do this Express added
+// the raw parser to the Express. So we can directly use express.raw() directly to parse the body. In the above we are passing the
+// express.raw() as a middleware function.
 
 /// This is a body-parser , reading the data from the body into req.body
 app.use(express.json({ limit: "10kb" })); // Here the express.json() is the middleware and middleware is basically a function that can modify the
