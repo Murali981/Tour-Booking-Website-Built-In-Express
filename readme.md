@@ -13,8 +13,6 @@ A full-stack tour booking platform built with modern technologies: Node.js, Expr
 9. [Environment Variables](#environment-variables)
 10. [Testing](#testing)
 11. [Deployment](#deployment)
-12. [Contributing](#contributing)
-13. [License](#license)
 
 ## Overview
 This application allows users to browse, book, and pay for exciting travel experiences. It features a robust backend API, user authentication, payment integration with Stripe, and more.
