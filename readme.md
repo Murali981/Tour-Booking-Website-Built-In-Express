@@ -44,7 +44,6 @@ This application allows users to browse, book, and pay for exciting travel exper
 - PATCH /api/v1/tours/:id - Update a tour (Admin only)
 - DELETE /api/v1/tours/:id - Delete a tour (Admin only)
 - POST /api/v1/bookings/checkout-session/:tourId - Create a Stripe checkout session
-- [Add more endpoints as needed]
 
 ## Models
 1. User Model
