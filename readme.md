@@ -47,13 +47,13 @@ This application allows users to browse, book, and pay for exciting travel exper
 
 ## Models
 1. User Model
-   - Fields: name, email, password, role, etc.
+   - Fields: name, email, password and role
 2. Tour Model
-   - Fields: name, duration, maxGroupSize, difficulty, price, description, imageCover, images, startDates, etc.
+   - Fields: name, duration, maxGroupSize, difficulty, price, description, imageCover, images and startDates
 3. Booking Model
-   - Fields: tour, user, price, paid, etc.
+   - Fields: tour, user, price and paid
 4. Review Model
-   - Fields: review, rating, tour, user, etc.
+   - Fields: review, rating, tour and user
 
 ## Installation
 git clone https://github.com/yourusername/tours-booking-app.git
