@@ -1,9 +1,4 @@
 # Tours Booking application
-
-Built using modern technologies: node.js , express , mongoDB , mongoose
-
-# Tours Booking Application
-
 A full-stack tour booking platform built with modern technologies: Node.js, Express, MongoDB, and Mongoose.
 
 ## Table of Contents
