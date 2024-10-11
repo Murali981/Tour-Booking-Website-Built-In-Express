@@ -56,7 +56,7 @@ This application allows users to browse, book, and pay for exciting travel exper
    - Fields: review, rating, tour and user
 
 ## Installation
-git clone https://github.com/yourusername/tours-booking-app.git
+git clone https://github.com/Murali981/tours-booking-app.git
 cd tours-booking-app
 npm install
 
@@ -66,7 +66,7 @@ npm install
  ## Environment Variables
 Create a .env file in the root directory and add:
 NODE_ENV=development
-PORT=3000
+PORT=Any valid port number
 DATABASE=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=90d
