@@ -114,7 +114,8 @@ const createBookingCheckout = catchAsync(async (session) => {
   //  client_reference_id: req.params.tourId.
   const user = (await User.findOne({ email: session.customer_email })).id; // This is coming from the stripe.checkout.sessions.create()
   // function and from there we retrieving the userId from our database based on the email provided by the user on the request.
-  const price = session.line_items[0].price_data.unit_amount / 100;
+  // const price = session.line_items[0].price_data.unit_amount / 100;
+  const price = session.amount_total / 100;
   await Booking.create({ tour, user, price });
 });
 
