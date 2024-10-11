@@ -21,6 +21,9 @@ const router = express.Router();
 
 // router.use(authController.isLoggedIn); // This middleware will get applied to all the below routes
 
+router.use(viewsController.alerts); // This is the middleware function which will basically run for each and every single request that
+// is coming into this router. So it is basically all requests to our website
+
 router.get("/", authController.isLoggedIn, viewsController.getOverview);
 
 router.get("/tour/:slug", authController.isLoggedIn, viewsController.getTour);

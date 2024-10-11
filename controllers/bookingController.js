@@ -32,7 +32,7 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
      all because right now anyone knows this URL structure here could simply call without going through the Stripe checkout process. So
      anyone can book a tour without having to pay as all they have to do is to open the above URL along with the query string which 
      contains the tour,user and the price and then they would automatically create a new booking in our database without even paying */
-    success_url: `${req.protocol}://${req.get("host")}/my-tours`, // We still want to come back to "/my-tours" but without all the above
+    success_url: `${req.protocol}://${req.get("host")}/my-tours?alert=booking`, // We still want to come back to "/my-tours" but without all the above
     // query parameters which are in the above commented success_url. Once this success_url has successfully called after the Stripe
     // checkout has been successful then the "exports.webhookCheckout" function will be called.
     cancel_url: `${req.protocol}://${req.get("host")}/tour/${tour.slug}`, // This is the url that is getting called once the credit card

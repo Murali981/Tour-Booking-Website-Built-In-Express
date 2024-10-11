@@ -4,6 +4,16 @@ const User = require("../models/userModel");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 
+exports.alerts = (req, res, next) => {
+  const { alert } = req.query;
+  if (alert === "booking") {
+    res.locals.alert =
+      "Your booking was successful! Please check your email for a confirmation. If your booking doesn't show up here immediatly, please come back later.";
+  } // If you put this message on res.locals.alert then this alert is available in all pug templates . In this particualr case our
+  // base.pug file is present in views folder will pick this alert and displat it in the "data-alert" property
+  next();
+};
+
 exports.getOverview = catchAsync(async (req, res, next) => {
   // 1) Get all the tour data from the collection
   const tours = await Tour.find(); // We have to pass all this tour data into the below template such that we can use it to
