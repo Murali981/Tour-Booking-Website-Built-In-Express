@@ -58,7 +58,7 @@ This application allows users to browse, book, and pay for exciting travel exper
 ## Installation
 - git clone https://github.com/Murali981/tours-booking-app.git
 - cd tours-booking-app
--npm install
+- npm install
 
 ## Running the application
  - npm run
